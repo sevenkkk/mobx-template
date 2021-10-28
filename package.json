@@ -1,0 +1,42 @@
+{
+  "name": "mobx-template",
+  "version": "1.1.0",
+  "private": false,
+  "description": "",
+  "source": "src/index.js",
+  "main": "dist/index.js",
+  "umd:main": "dist/mobx-template.js",
+  "module": "dist/index.m.js",
+  "exports": {
+    "require": "./dist/index.js",
+    "default": "./dist/index.modern.js"
+  },
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "seven",
+  "license": "ISC",
+  "scripts": {
+    "start": "microbundle watch",
+    "build": "microbundle -i src/index.ts -f modern,esm,cjs",
+    "build:umd": "microbundle -i src/index.ts -o dist/mobx-template.js --no-pkg-main --external none -f umd --no-sourcemap",
+    "test": "jest --config=jest.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://code.hzchengzi.com:7990/projects/WJ/repos/wj-sdk-js/browse"
+  },
+  "devDependencies": {
+    "@jest/environment": "^27.3.1",
+    "@types/jest": "^24.0.12",
+    "jest": "^24.8.0",
+    "microbundle": "^0.14.1",
+    "ts-jest": "^24.0.2",
+    "tslint": "6.1.0",
+    "typescript": "3.8.3"
+  },
+  "dependencies": {
+    "mobx": "5.15.4"
+  }
+}
