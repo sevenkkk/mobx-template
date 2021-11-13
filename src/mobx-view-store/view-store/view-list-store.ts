@@ -1,46 +1,50 @@
-import { action, observable } from 'mobx';
 import ViewBaseListStore from './base/view-base-list-store';
-import { ResponseBody } from '../model/response-body';
+import { UseResult } from '../model/use-result';
+import { action, makeObservable, override } from 'mobx';
+import { FetchConfig } from '../model/fetch-config';
 
-export default abstract class ViewListStore<P, T> extends ViewBaseListStore<P, T> {
+export interface ListStoreConfig<P, T> {
+	defaultParams?: P,
+	isDefaultSet?: boolean,
+	successCallback?: (data: T[]) => void,
+	failCallback?: (res: UseResult<any>) => void
+}
 
-	protected constructor() {
+export class ViewListStore<P, T> extends ViewBaseListStore<P, T> {
+
+	constructor(public prepare: (params: P) => Promise<any>, public config?: ListStoreConfig<P, T>) {
 		super();
-		this.initialize();
-	}
-
-	@observable
-	isDefaultSet = true;
-
-	/**
-	 * api请求
-	 */
-	abstract prepare(): Promise<ResponseBody>;
-
-	/**
-	 * 初始化方法
-	 */
-	@action.bound
-	initialize() {
-		this.params = {};
-	}
-
-
-	/**
-	 * 加载数据
-	 */
-	@action.bound
-	loadData(params?: P): Promise<boolean> {
-		if (params) {
-			this.params = {...this.params, ...params};
+		const {defaultParams} = this.config || {isDefaultSet: true};
+		if (defaultParams) {
+			this.params = defaultParams;
 		}
-		return this.doFetch(async () => {
-			const res = await this.prepare();
-			if(this.isDefaultSet){
-				this.list = res.payload;
+		makeObservable(this, {loadData: action.bound, clear: override});
+	}
+
+	async loadData(params?: P, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
+		if (params) {
+			this.setParams(params);
+		}
+
+		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
+		const res = await this.doFetch<T[]>(() => this.prepare(this.params), myConfig);
+		const {success, data} = res;
+		if (success) {
+			const {isDefaultSet} = this.config || {isDefaultSet: true};
+			if (isDefaultSet && data) {
+				this.list = data;
 			}
-			this.onLoadComplete(res.payload);
-		});
+			if (this.config?.successCallback) {
+				this.config?.successCallback(this.list);
+			}
+			this.onLoadComplete(this.list);
+		} else {
+			if (this.config?.failCallback) {
+				this.config?.failCallback(res);
+			}
+		}
+
+		return res;
 	}
 
 }

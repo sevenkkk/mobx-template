@@ -1,39 +1,24 @@
-import { action, observable } from 'mobx';
 import BaseViewStore from './base-view-store';
-import { ResponseBody } from '../../model/response-body';
+import { action, makeObservable, observable } from 'mobx';
 
-export abstract class ViewBaseBodyStore<P> extends BaseViewStore {
+export class ViewBaseBodyStore<P> extends BaseViewStore {
 
-	// 请求体
-	@observable
-	body: P | any;
-
-	public constructor() {
+	protected constructor() {
 		super();
-		this.initialize();
+		makeObservable(this, {
+			body: observable,
+			setBody: action.bound,
+			clear: action.bound,
+		});
 	}
 
-	/**
-	 * 初始化方法
-	 */
-	@action.bound
-	initialize() {
-		this.body = {};
-	}
+	body: P | any = undefined;
 
-	/**
-	 * 设置请求体
-	 * @param value
-	 */
-	@action.bound
 	setBody(value: P) {
-		this.body = {...this.body, ...value};
+		this.body = {...this.body || {}, ...value};
 	}
 
-	abstract prepare(): Promise<ResponseBody>;
-
-
-	clear(){
-		this.body = {};
+	clear() {
+		this.body = undefined;
 	}
 }

@@ -1,95 +1,62 @@
-import { action, observable } from 'mobx';
 import { ViewBaseBodyStore } from './base/view-base-body-store';
-import { ViewBaseBodyListStore } from './base/view-base-body-list-store';
+import { action, makeObservable, observable, override } from 'mobx';
+import { UseResult } from '../model/use-result';
+import { FetchConfig } from '../model/fetch-config';
 
-/**
- * 提交请求
- */
-export abstract class ViewSubmitStore<P> extends ViewBaseBodyStore<P> {
-
-	@action.bound
-	async submit(body?: P): Promise<{ success: boolean }> {
-		if (body) {
-			this.body = {...this.body, ...body};
-		}
-
-		const success = await this.doFetch(async () => {
-			const res = await this.prepare();
-			this.onLoadComplete(res.payload);
-		});
-		return {success};
-	}
-
-	@action.bound
-	clear() {
-		super.clear();
-	}
-
-	onLoadComplete(mgs?: string) {
-	}
-
+export interface SubmitStoreConfig<P, T> {
+	defaultBody?: P,
+	isDefaultSet?: boolean,
+	successCallback?: (data: T) => void,
+	failCallback?: (res: UseResult<any>) => void
 }
 
-/**
- * 提交请求（带返回体）
- */
-// tslint:disable-next-line:max-classes-per-file
-export abstract class ViewSubmitResultStore<P, T> extends ViewBaseBodyStore<P> {
+export class ViewSubmitStore<P, T> extends ViewBaseBodyStore<P> {
 
-	@observable
-	data: T | any;
-
-	@action.bound
-	async submit(body?: P): Promise<{
-		success: boolean
-		data: T
-	}> {
-		if (body) {
-			this.body = {...this.body, ...body};
+	constructor(public prepare: (body: P) => Promise<any>,
+				public config?: SubmitStoreConfig<P, T>) {
+		super();
+		const {defaultBody} = this.config || {isDefaultSet: true};
+		if (defaultBody) {
+			this.setBody({...(this.body || {}), ...defaultBody});
 		}
-		const success = await this.doFetch(async () => {
-			const res = await this.prepare();
-			this.data = res.payload;
-			this.onLoadComplete(this.data);
+		makeObservable(this, {
+			data: observable,
+			submit: action.bound,
+			setData: action.bound,
+			clear: override,
 		});
-		return {success, data: this.data};
 	}
 
-	@action.bound
+	data: T | any = undefined;
+
+	async submit(body?: P, config?: FetchConfig<T>): Promise<UseResult<T>> {
+		if (body) {
+			this.setBody({...this.body, ...body});
+		}
+
+		const myConfig = {showMessage: true, showSuccessMessage: true, showErrorMessage: true, ...(config || {})};
+		const res = await this.doFetch<T>(() => this.prepare(this.body), myConfig);
+		const {success, data} = res;
+		if (success) {
+			this.setData(data);
+			if (this.config?.successCallback) {
+				this.config?.successCallback(this.data);
+			}
+		} else {
+			if (this.config?.failCallback) {
+				this.config?.failCallback(this.data);
+			}
+		}
+		return res;
+	}
+
 	clear() {
 		super.clear();
-		this.data = undefined;
+		this.setData(undefined);
 	}
 
-	onLoadComplete(data: T) {
-	}
-
-}
-
-/**
- * 提交请求(传值数组)
- */
-// tslint:disable-next-line:max-classes-per-file
-export abstract class ViewSubmitListStore<P> extends ViewBaseBodyListStore<P> {
-
-	@action.bound
-	async submit(body?: P[]): Promise<{ success: boolean }> {
-		if (body) {
-			this.body = body;
-		}
-		const success = await this.doFetch(async () => {
-			const res = await this.prepare();
-			this.onLoadComplete(res.payload);
-		});
-		return {success};
-	}
-
-	@action.bound
-	clear() {
-		super.clear();
-	}
-
-	onLoadComplete(mgs?: string) {
+	setData(data: any) {
+		this.data = data;
 	}
 
 }

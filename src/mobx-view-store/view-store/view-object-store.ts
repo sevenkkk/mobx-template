@@ -1,102 +1,62 @@
-import { action, observable } from 'mobx';
-import { ViewBaseBodyStore } from './base/view-base-body-store';
+import { action, makeObservable, observable } from 'mobx';
+import BaseViewStore from './base/base-view-store';
+import { UseResult } from '../model/use-result';
+import { FetchConfig } from '../model/fetch-config';
 
-/**
- * 获取数据
- */
-export abstract class ViewObjectStore<P, T> extends ViewBaseBodyStore<P> {
 
-	@observable
-	data: T | any = {};
-
-	protected constructor() {
-		super();
-		this.initialize();
-	}
-	@observable
-	isDefaultSet = true;
-
-	/**
-	 * 获取数据
-	 * @param body
-	 */
-	@action.bound
-	async loadData(body?: P): Promise<{
-		success: boolean
-		data: T
-	}> {
-		if (body) {
-			this.body = {...this.body, ...body};
-		}
-		const success = await this.doFetch(async () => {
-			const res = await this.prepare();
-			if (this.isDefaultSet) {
-				this.data = res.payload;
-			}
-
-			this.onLoadComplete(res.payload);
-		});
-		return {success, data: this.data};
-	}
-
-	/**
-	 * 清空数据
-	 */
-	@action.bound
-	clear() {
-		this.data = {};
-	}
-
-	/**
-	 * 获取数据成功
-	 * @param data
-	 */
-	onLoadComplete(data: T) {
-	}
-
+export interface ObjStoreConfig<P, T> {
+	defaultParams?: P,
+	isDefaultSet?: boolean,
+	successCallback?: (data: T) => void,
+	failCallback?: (res: UseResult<any>) => void
 }
 
-/**
- * 获取数据
- */
-export abstract class ViewStringStore<P> extends ViewBaseBodyStore<P> {
+export class ViewObjStore<P, T> extends BaseViewStore {
 
-	@observable
-	data: string = '';
+	data: T | any = undefined;
 
-	/**
-	 * 获取数据
-	 * @param body
-	 */
-	@action.bound
-	async loadData(body?: P): Promise<{
-		success: boolean
-		data: string
-	}> {
-		if (body) {
-			this.body = {...this.body, ...body};
+	params: P | any = undefined;
+
+	constructor(public prepare: (params: P) => Promise<any>,
+				public config?: ObjStoreConfig<P, T>) {
+		super();
+		const {defaultParams} = this.config || {isDefaultSet: true};
+		if (defaultParams) {
+			this.params = {...(this.params || {}), ...defaultParams};
 		}
-		const success = await this.doFetch(async () => {
-			const res = await this.prepare();
-			this.data = res.payload;
-			this.onLoadComplete(this.data);
+		makeObservable(this, {
+			data: observable,
+			params: observable,
+			loadData: action.bound,
+			clear: action.bound,
 		});
-		return {success, data: this.data};
 	}
 
-	/**
-	 * 清空数据
-	 */
-	@action.bound
+	async loadData(params?: P, config?: FetchConfig<T>): Promise<UseResult<T>> {
+		if (params) {
+			this.params = {...this.params, ...params};
+		}
+		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
+		const res = await this.doFetch<T>(() => this.prepare(this.params), myConfig);
+		const {success, data} = res;
+		if (success) {
+			const {isDefaultSet} = this.config || {isDefaultSet: true};
+			if (isDefaultSet && data) {
+				this.data = data;
+			}
+			if (this.config?.successCallback) {
+				this.config?.successCallback(this.data);
+			}
+		} else {
+			if (this.config?.failCallback) {
+				this.config?.failCallback(this.data);
+			}
+		}
+		return res;
+	}
+
 	clear() {
-		this.data = '';
-	}
-
-	/**
-	 * 获取数据成功
-	 * @param data
-	 */
-	onLoadComplete(data: string) {
+		this.data = undefined;
 	}
 
 }

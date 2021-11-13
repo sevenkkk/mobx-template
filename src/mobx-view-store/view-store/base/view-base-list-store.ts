@@ -1,54 +1,61 @@
-import { action, computed, observable } from 'mobx';
 import BaseViewStore from './base-view-store';
+import { action, computed, makeObservable, observable } from 'mobx';
 
-export default abstract class ViewBaseListStore<P, T> extends BaseViewStore {
+export default class ViewBaseListStore<P, T> extends BaseViewStore {
+	constructor() {
+		super();
+		makeObservable(this, {
+			list: observable,
+			params: observable,
+			index: observable,
+			active: computed,
+			setIndex: action.bound,
+			hasData: action.bound,
+			setParams: action.bound,
+			clear: action.bound,
+			onLoadComplete: action.bound,
+		});
+	}
 
-	@observable list: T[] = [];
+	list: T[] = [];
 
-	@observable
-	params: P | any;
+	params: P | any = undefined;
 
-	@observable
 	index: number = -1;
 
-	@computed
 	get active(): T | null {
 		return this.list.length > this.index ? this.list[this.index] : null;
 	}
 
-	@action.bound
 	setIndex(index: number) {
 		this.index = index;
 	}
 
 	/**
-	 * 判断列表是否存在数据
+	 * Is it empty
 	 */
-	@computed
 	get hasData() {
 		return this.list && this.list.length > 0;
 	}
 
 	/**
-	 * 设置参数
+	 * Set parameters
 	 * @param obj
 	 */
-	@action.bound
 	setParams(obj: P) {
 		this.params = {...this.params, ...obj};
 	}
 
 	/**
-	 * 清空数据
+	 * Clear data
 	 */
-	@action.bound
 	clear() {
 		this.list = [];
 		this.end();
 	}
 
 	/**
-	 * 加载数据完成
+	 * Loading data complete
 	 * @param list
 	 */
 	onLoadComplete(list: T[]) {

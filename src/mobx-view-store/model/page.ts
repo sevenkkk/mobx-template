@@ -1,11 +1,14 @@
-export interface Page {
-	page?: number
-	pageSize?: number
-}
+import { UseResult } from './use-result';
+import { FetchConfig } from './fetch-config';
 
-export interface PageView {
+export interface PageView<T> {
 	page: number
 	pageSize: number
 	count: number
-	loadDataPage: (page: number, pageSize?: number) => Promise<boolean>
+	loadDataPage: (config: PageConfig<T[]>) => Promise<UseResult<T[]>>
+}
+
+export interface PageConfig<T> extends FetchConfig<T>{
+	page: number;
+	pageSize: number;
 }

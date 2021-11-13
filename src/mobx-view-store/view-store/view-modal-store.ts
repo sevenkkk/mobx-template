@@ -1,63 +1,60 @@
-import { action, computed, observable } from 'mobx';
 import { PageActionType } from '../model/page-action-type.model';
+import { action, computed, makeObservable, observable } from 'mobx';
 
-export abstract class ViewModalStore<P> {
-	@observable
+export interface ModalStoreConfig {
+	onOpen?: (data?: Record<string, any>) => void;
+	onClose?: () => void
+}
+
+export class ViewModalStore {
+
+	onOpen?: (data?: Record<string, any>) => void;
+
+	onClose?: () => void;
+
+	constructor(public config?: ModalStoreConfig) {
+		this.onOpen = this.config?.onOpen;
+		this.onClose = this.config?.onClose;
+
+		makeObservable(this, {
+			showModal: observable,
+			data: observable,
+			actionType: observable,
+			openModal: action.bound,
+			closeModal: action.bound,
+			setData: action.bound,
+			isUpdate: computed,
+		});
+	}
+
 	showModal = false;
 
-	@observable
-	actionType = PageActionType.ADD; // 页面modal操作类型
+	actionType = PageActionType.ADD;
 
-	/**
-	 * 打开modal
-	 * @param actionType 页面操作类型
-	 */
-	@action.bound
-	openModal(actionType: PageActionType = PageActionType.ADD) {
+	data?: Record<string, any> = undefined;
+
+	openModal(data?: Record<string, any>, actionType: PageActionType = PageActionType.ADD) {
 		this.actionType = actionType;
+		this.setData();
 		this.showModal = true;
-		return (data?: P) => this.loadModalData(data);
+		if (this.onOpen) {
+			this.onOpen(data);
+		}
 	}
 
+	setData(data?: Record<string, any>) {
+		this.data = data;
+	}
 
-	/**
-	 * 关闭modal
-	 */
-	@action.bound
 	closeModal() {
 		this.showModal = false;
-		this.clearModal();
+		if (this.onClose) {
+			this.onClose();
+		}
 	}
 
-	/**
-	 * 是否更新
-	 */
-	@computed
 	get isUpdate(): boolean {
 		return this.actionType === PageActionType.UPDATE;
 	};
 
-	/**
-	 * 获取modal标题
-	 */
-	@computed
-	get actionText(): string {
-		return this.getTitle();
-	};
-
-	/**
-	 * 获取modal数据
-	 * @param data
-	 */
-	protected abstract loadModalData(data?: P): void
-
-	/**
-	 * 清空modal数据
-	 */
-	protected abstract clearModal(): void;
-
-	/**
-	 * modal 标题
-	 */
-	protected abstract getTitle(): string;
 }

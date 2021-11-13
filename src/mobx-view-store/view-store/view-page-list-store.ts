@@ -1,79 +1,67 @@
-import { action, computed, observable } from 'mobx';
 import ViewBaseListStore from './base/view-base-list-store';
-import { ResponseBody } from '../model/response-body';
-import { PageView } from '../model/page';
+import { PageConfig, PageView } from '../model/page';
+import { action, computed, makeObservable, observable } from 'mobx';
+import { UseResult } from '../model/use-result';
+import { ListStoreConfig } from './view-list-store';
+import { FetchConfig } from '../model/fetch-config';
 
-export default abstract class ViewPageListStore<P, T> extends ViewBaseListStore<P, T> {
+export interface PageListStoreConfig<P, T> extends ListStoreConfig<P, T> {
+	pageSize?: number,
+}
 
-	@observable page = 1;
-	@observable pageSize = 10;
+export class ViewPageListStore<P, T> extends ViewBaseListStore<P, T> {
 
-	@observable
-	count: number = 0;
-
-	@observable
-	isDefaultSet = true;
-
-	protected constructor() {
+	constructor(public prepare: (params: P) => Promise<any>,
+				public config?: PageListStoreConfig<P, T>,
+	) {
 		super();
-		this.initialize();
-	}
+		const {defaultParams, pageSize} = this.config || {isDefaultSet: true};
+		if (defaultParams) {
+			this.params = {...(this.params || {}), ...defaultParams};
+		}
 
-	/**
-	 * api请求
-	 */
-	abstract prepare(): Promise<ResponseBody>;
+		if (pageSize) {
+			this.pageSize = pageSize;
+		}
 
-	/**
-	 * 初始化方法
-	 */
-	@action.bound
-	initialize() {
 		this.params = {
 			page: this.page,
 			pageSize: this.pageSize,
 		};
+
+		makeObservable(this, {
+			page: observable,
+			pageSize: observable,
+			count: observable,
+			pages: computed,
+			loadDataPage: action.bound,
+			loadData: action.bound,
+		});
 	}
 
-	/**
-	 * 获取商品分页信息
-	 */
-	@computed
-	get pages(): PageView {
+	page = 1;
+	pageSize = 10;
+
+	count: number = 0;
+
+	get pages(): PageView<T> {
 		return {count: this.count, page: this.page, pageSize: this.pageSize, loadDataPage: this.loadDataPage};
 	}
 
-	/**
-	 * 加载数据
-	 * @param params
-	 * @param page
-	 * @param pageSize
-	 */
-	@action.bound
-	loadData(params?: P, page: number = this.page, pageSize: number = this.params.pageSize): Promise<boolean> {
+	loadData(params?: P, config?: PageConfig<T[]>): Promise<UseResult<T[]>> {
 		if (params) {
-			this.params = {...this.params, ...params};
+			this.setParams(params);
 		}
-		return this._loadData(page, pageSize);
+		const {page, pageSize} = config || {};
+		return this.doLoadData(page || this.page, pageSize || this.pageSize, config);
 	}
 
-	/**
-	 * 加载数据
-	 * @param page
-	 * @param pageSize
-	 */
-	@action.bound
-	loadDataPage(page: number = this.page, pageSize: number = this.params.pageSize): Promise<boolean> {
-		return this._loadData(page, pageSize);
+	loadDataPage(config: PageConfig<T[]>): Promise<UseResult<T[]>> {
+		const {page, pageSize} = config;
+		return this.doLoadData(page || this.page, pageSize || this.pageSize, config);
 	}
 
-	/**
-	 * 加载分页数据
-	 * @param page
-	 * @param pageSize
-	 * @private
-	 */
-	private _loadData(page: number, pageSize: number): Promise<boolean> {
+	private async doLoadData(page: number, pageSize: number, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
 		if (this.page !== page) {
 			this.page = page;
 		}
@@ -81,15 +69,27 @@ export default abstract class ViewPageListStore<P, T> extends ViewBaseListStore<
 			this.pageSize = pageSize;
 		}
 		this.params = {...this.params, page, pageSize};
-		return this.doFetch(async () => {
-			const res = await this.prepare();
-			if (this.isDefaultSet) {
-				this.list = res.payload;
-				this.count = res.count;
+
+		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
+
+		const res = await this.doFetch<T[]>(() => this.prepare(this.params), myConfig);
+		const {success, data, totalCount} = res;
+		if (success) {
+			const {isDefaultSet} = this.config || {isDefaultSet: true};
+			if (isDefaultSet && data) {
+				this.list = data;
+				this.count = totalCount || 0;
 			}
-			this.count = res.count;
-			this.onLoadComplete(res.payload);
-		});
+			if (this.config?.successCallback) {
+				this.config?.successCallback(this.list);
+			}
+			this.onLoadComplete(this.list);
+		} else {
+			if (this.config?.failCallback) {
+				this.config?.failCallback(res);
+			}
+		}
+		return res;
 	}
 
 }
