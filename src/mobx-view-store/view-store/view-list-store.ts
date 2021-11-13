@@ -16,7 +16,7 @@ export class ViewListStore<P, T> extends ViewBaseListStore<P, T> {
 		super();
 		const {defaultParams} = this.config || {isDefaultSet: true};
 		if (defaultParams) {
-			this.params = defaultParams;
+			this.setParams(defaultParams);
 		}
 		makeObservable(this, {loadData: action.bound, clear: override});
 	}
@@ -32,7 +32,7 @@ export class ViewListStore<P, T> extends ViewBaseListStore<P, T> {
 		if (success) {
 			const {isDefaultSet} = this.config || {isDefaultSet: true};
 			if (isDefaultSet && data) {
-				this.list = data;
+				this.setList(data);
 			}
 			if (this.config?.successCallback) {
 				this.config?.successCallback(this.list);

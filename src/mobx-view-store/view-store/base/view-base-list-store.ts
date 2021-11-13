@@ -12,6 +12,7 @@ export default class ViewBaseListStore<P, T> extends BaseViewStore {
 			setIndex: action.bound,
 			hasData: action.bound,
 			setParams: action.bound,
+			setList: action.bound,
 			clear: action.bound,
 			onLoadComplete: action.bound,
 		});
@@ -31,6 +32,10 @@ export default class ViewBaseListStore<P, T> extends BaseViewStore {
 		this.index = index;
 	}
 
+	setList(list: T[]) {
+		this.list = list;
+	}
+
 	/**
 	 * Is it empty
 	 */
@@ -43,7 +48,7 @@ export default class ViewBaseListStore<P, T> extends BaseViewStore {
 	 * @param obj
 	 */
 	setParams(obj: P) {
-		this.params = {...this.params, ...obj};
+		this.params = {...(this.params || {}), ...obj};
 	}
 
 	/**

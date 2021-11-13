@@ -19,12 +19,14 @@ export default class BaseViewStore {
 			error: action.bound,
 			empty: action.bound,
 			doFetch: action.bound,
+			setMessage: action.bound,
 			handleError: action.bound,
 		});
 	}
 
 	state = ViewState.idle;
 
+	errorMessage = '';
 
 	setState(state: ViewState) {
 		this.state = state;
@@ -34,7 +36,9 @@ export default class BaseViewStore {
 		return this.state === ViewState.busy;
 	}
 
-	errorMessage = 'System Error';
+	setMessage(errorMessage: string) {
+		this.errorMessage = errorMessage;
+	}
 
 	start() {
 		this.setState(ViewState.busy);
@@ -65,7 +69,7 @@ export default class BaseViewStore {
 			if (this.state !== ViewState.empty) {
 				this.end();
 			}
-			this.errorMessage = '';
+			this.setMessage('');
 			result = ConfigService.config.handleHttpResult<T>(res);
 		} catch (e) {
 			result = this.handleError(e);
@@ -87,9 +91,16 @@ export default class BaseViewStore {
 			if (config?.failCallback) {
 				config?.failCallback(result);
 			}
+			const eMessage = myErrorMessage || errorMessage;
+
+			if (eMessage) {
+				this.setMessage(eMessage);
+			}
+
 			if (timeout != null) {
 				clearTimeout(timeout);
 			}
+
 			if (myErrorMessage || (showMessage && showErrorMessage && errorMessage)) {
 				timeout = setTimeout(() => {
 					ConfigService.config.showErrorMessage({
@@ -127,7 +138,6 @@ export default class BaseViewStore {
 				ConfigService?.config?.handle401({message});
 			}
 		}
-		this.errorMessage = res?.errorMessage || ConfigService.config?.systemErrorMessage || '';
 		return {...res, status: response.status || -100};
 	}
 

@@ -11,23 +11,29 @@ export interface PageListStoreConfig<P, T> extends ListStoreConfig<P, T> {
 
 export class ViewPageListStore<P, T> extends ViewBaseListStore<P, T> {
 
+	page = 1;
+	pageSize = 10;
+
+	count: number = 0;
+
 	constructor(public prepare: (params: P) => Promise<any>,
 				public config?: PageListStoreConfig<P, T>,
 	) {
 		super();
 		const {defaultParams, pageSize} = this.config || {isDefaultSet: true};
 		if (defaultParams) {
-			this.params = {...(this.params || {}), ...defaultParams};
+			this.setParams(defaultParams);
 		}
 
 		if (pageSize) {
-			this.pageSize = pageSize;
+			this.setPageSize(pageSize);
 		}
 
-		this.params = {
+		// @ts-ignore
+		this.setParams({
 			page: this.page,
 			pageSize: this.pageSize,
-		};
+		});
 
 		makeObservable(this, {
 			page: observable,
@@ -35,14 +41,24 @@ export class ViewPageListStore<P, T> extends ViewBaseListStore<P, T> {
 			count: observable,
 			pages: computed,
 			loadDataPage: action.bound,
+			setPage: action.bound,
+			setPageSize: action.bound,
+			setCount: action.bound,
 			loadData: action.bound,
 		});
 	}
 
-	page = 1;
-	pageSize = 10;
+	setPage(page: number) {
+		this.page = page;
+	}
 
-	count: number = 0;
+	setPageSize(pageSize: number) {
+		this.pageSize = pageSize;
+	}
+
+	setCount(count: number) {
+		this.count = count;
+	}
 
 	get pages(): PageView<T> {
 		return {count: this.count, page: this.page, pageSize: this.pageSize, loadDataPage: this.loadDataPage};
@@ -63,12 +79,13 @@ export class ViewPageListStore<P, T> extends ViewBaseListStore<P, T> {
 
 	private async doLoadData(page: number, pageSize: number, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
 		if (this.page !== page) {
-			this.page = page;
+			this.setPage(page);
 		}
 		if (this.pageSize !== pageSize) {
-			this.pageSize = pageSize;
+			this.setPageSize(pageSize);
 		}
-		this.params = {...this.params, page, pageSize};
+		// @ts-ignore
+		this.setParams({page, pageSize});
 
 		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
 
@@ -77,8 +94,8 @@ export class ViewPageListStore<P, T> extends ViewBaseListStore<P, T> {
 		if (success) {
 			const {isDefaultSet} = this.config || {isDefaultSet: true};
 			if (isDefaultSet && data) {
-				this.list = data;
-				this.count = totalCount || 0;
+				this.setList(data);
+				this.setCount(totalCount || 0);
 			}
 			if (this.config?.successCallback) {
 				this.config?.successCallback(this.list);

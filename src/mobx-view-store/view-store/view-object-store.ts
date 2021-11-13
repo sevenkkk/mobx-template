@@ -27,14 +27,23 @@ export class ViewObjStore<P, T> extends BaseViewStore {
 		makeObservable(this, {
 			data: observable,
 			params: observable,
+			setParams: action.bound,
 			loadData: action.bound,
 			clear: action.bound,
 		});
 	}
 
+	setParams(params: P) {
+		this.params = {...(this.params || {}), ...params};
+	}
+
+	setData(data: T) {
+		this.data = data;
+	}
+
 	async loadData(params?: P, config?: FetchConfig<T>): Promise<UseResult<T>> {
 		if (params) {
-			this.params = {...this.params, ...params};
+			this.setParams(params);
 		}
 		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
 		const res = await this.doFetch<T>(() => this.prepare(this.params), myConfig);
@@ -42,7 +51,7 @@ export class ViewObjStore<P, T> extends BaseViewStore {
 		if (success) {
 			const {isDefaultSet} = this.config || {isDefaultSet: true};
 			if (isDefaultSet && data) {
-				this.data = data;
+				this.setData(data);
 			}
 			if (this.config?.successCallback) {
 				this.config?.successCallback(this.data);

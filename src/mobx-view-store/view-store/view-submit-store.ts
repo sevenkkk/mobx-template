@@ -12,6 +12,8 @@ export interface SubmitStoreConfig<P, T> {
 
 export class ViewSubmitStore<P, T> extends ViewBaseBodyStore<P> {
 
+	data: T | any = undefined;
+
 	constructor(public prepare: (body: P) => Promise<any>,
 				public config?: SubmitStoreConfig<P, T>) {
 		super();
@@ -26,8 +28,6 @@ export class ViewSubmitStore<P, T> extends ViewBaseBodyStore<P> {
 			clear: override,
 		});
 	}
-
-	data: T | any = undefined;
 
 	async submit(body?: P, config?: FetchConfig<T>): Promise<UseResult<T>> {
 		if (body) {
