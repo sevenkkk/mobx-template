@@ -6,7 +6,7 @@ export interface ModalStoreConfig {
 	onClose?: () => void
 }
 
-export class ViewModalStore {
+export class ViewModalStore<T = Record<string, any> | string> {
 
 	onOpen?: (data?: Record<string, any>) => void;
 
@@ -17,44 +17,44 @@ export class ViewModalStore {
 		this.onClose = this.config?.onClose;
 
 		makeObservable(this, {
-			showModal: observable,
+			visible: observable,
 			data: observable,
 			actionType: observable,
 			openModal: action.bound,
 			closeModal: action.bound,
 			setData: action.bound,
-			isUpdate: computed,
+			setVisible: action.bound,
 		});
 	}
 
-	showModal = false;
+	visible = false;
 
 	actionType = PageActionType.ADD;
 
-	data?: Record<string, any> = undefined;
+	data?: T = undefined;
 
-	openModal(data?: Record<string, any>, actionType: PageActionType = PageActionType.ADD) {
-		this.actionType = actionType;
-		this.setData();
-		this.showModal = true;
+	openModal(data?: T) {
+		this.setData(data);
+		this.setVisible(true);
 		if (this.onOpen) {
 			this.onOpen(data);
 		}
 	}
 
-	setData(data?: Record<string, any>) {
+	setVisible(visible: boolean) {
+		this.visible = visible;
+	}
+
+	setData(data?: T) {
 		this.data = data;
 	}
 
 	closeModal() {
-		this.showModal = false;
+		this.setVisible(false);
+		this.setData(undefined);
 		if (this.onClose) {
 			this.onClose();
 		}
 	}
-
-	get isUpdate(): boolean {
-		return this.actionType === PageActionType.UPDATE;
-	};
 
 }

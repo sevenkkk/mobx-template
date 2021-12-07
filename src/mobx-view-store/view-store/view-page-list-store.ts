@@ -1,112 +1,123 @@
 import ViewBaseListStore from './base/view-base-list-store';
-import { PageConfig, PageView } from '../model/page';
+import { PageConfig, PaginationProp } from '../model/page';
 import { action, computed, makeObservable, observable } from 'mobx';
 import { UseResult } from '../model/use-result';
 import { ListStoreConfig } from './view-list-store';
 import { FetchConfig } from '../model/fetch-config';
 
-export interface PageListStoreConfig<P, T> extends ListStoreConfig<P, T> {
+export interface PageListStoreConfig<T, P> extends ListStoreConfig<T, P> {
 	pageSize?: number,
 }
 
-export class ViewPageListStore<P, T> extends ViewBaseListStore<P, T> {
+export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListStore<T, P> {
 
-	page = 1;
+	current = 1;
 	pageSize = 10;
 
-	count: number = 0;
+	total = 0;
 
 	constructor(public prepare: (params: P) => Promise<any>,
-				public config?: PageListStoreConfig<P, T>,
+				public config?: PageListStoreConfig<T, P>,
 	) {
 		super();
-		const {defaultParams, pageSize} = this.config || {isDefaultSet: true};
+		const {defaultParams, pageSize} = this.config || {};
 		if (defaultParams) {
-			this.setParams(defaultParams);
+			if (typeof defaultParams === 'function') {
+				this.setParams(defaultParams());
+			} else {
+				this.setParams(defaultParams);
+			}
 		}
 
 		if (pageSize) {
 			this.setPageSize(pageSize);
 		}
 
-		// @ts-ignore
 		this.setParams({
-			page: this.page,
+			current: this.current,
 			pageSize: this.pageSize,
-		});
+		} as any);
 
 		makeObservable(this, {
-			page: observable,
+			current: observable,
 			pageSize: observable,
-			count: observable,
-			pages: computed,
+			total: observable,
+			pagination: computed,
 			loadDataPage: action.bound,
-			setPage: action.bound,
+			setCurrent: action.bound,
 			setPageSize: action.bound,
-			setCount: action.bound,
+			setTotal: action.bound,
 			loadData: action.bound,
 		});
 	}
 
-	setPage(page: number) {
-		this.page = page;
+	setCurrent(current: number) {
+		this.current = current;
 	}
 
 	setPageSize(pageSize: number) {
 		this.pageSize = pageSize;
 	}
 
-	setCount(count: number) {
-		this.count = count;
+	setTotal(total: number) {
+		this.total = total;
 	}
 
-	get pages(): PageView<T> {
-		return {count: this.count, page: this.page, pageSize: this.pageSize, loadDataPage: this.loadDataPage};
+	get pagination(): PaginationProp {
+		return {
+			total: this.total,
+			current: this.current,
+			pageSize: this.pageSize,
+		};
 	}
 
 	loadData(params?: P, config?: PageConfig<T[]>): Promise<UseResult<T[]>> {
+		const {current, pageSize, replace} = config || {};
 		if (params) {
-			this.setParams(params);
+			if (replace) {
+				this.setParams(params);
+			} else {
+				this.mergeParams(params);
+			}
 		}
-		const {page, pageSize} = config || {};
-		return this.doLoadData(page || this.page, pageSize || this.pageSize, config);
+		return this.doLoadData(current || this.current, pageSize || this.pageSize, config);
 	}
 
 	loadDataPage(config: PageConfig<T[]>): Promise<UseResult<T[]>> {
-		const {page, pageSize} = config;
-		return this.doLoadData(page || this.page, pageSize || this.pageSize, config);
+		const {current, pageSize} = config;
+		return this.doLoadData(current || this.current, pageSize || this.pageSize, config);
 	}
 
-	private async doLoadData(page: number, pageSize: number, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
-		if (this.page !== page) {
-			this.setPage(page);
+	private async doLoadData(current: number, pageSize: number, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
+		if (this.current !== current) {
+			this.setCurrent(current);
 		}
 		if (this.pageSize !== pageSize) {
 			this.setPageSize(pageSize);
 		}
 		// @ts-ignore
-		this.setParams({page, pageSize});
+		this.mergeParams({current, pageSize});
 
 		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
 
 		const res = await this.doFetch<T[]>(() => this.prepare(this.params), myConfig);
-		const {success, data, totalCount} = res;
+		const {success, data, total} = res;
 		if (success) {
-			const {isDefaultSet} = this.config || {isDefaultSet: true};
+			const {isDefaultSet} = {isDefaultSet: true, ...(this.config || {})};
 			if (isDefaultSet && data) {
 				this.setList(data);
-				this.setCount(totalCount || 0);
+				this.setTotal(total || 0);
 			}
 			if (this.config?.successCallback) {
-				this.config?.successCallback(this.list);
+				this.config?.successCallback(data || [], total || 0);
 			}
-			this.onLoadComplete(this.list);
+			this.onLoadComplete(data || []);
 		} else {
 			if (this.config?.failCallback) {
 				this.config?.failCallback(res);
 			}
 		}
-		return res;
+		return {...res, data: this.list};
 	}
 
 }

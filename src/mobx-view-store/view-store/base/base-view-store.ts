@@ -19,7 +19,7 @@ export default class BaseViewStore {
 			error: action.bound,
 			empty: action.bound,
 			doFetch: action.bound,
-			setMessage: action.bound,
+			setErrorMessage: action.bound,
 			handleError: action.bound,
 		});
 	}
@@ -36,7 +36,7 @@ export default class BaseViewStore {
 		return this.state === ViewState.busy;
 	}
 
-	setMessage(errorMessage: string) {
+	setErrorMessage(errorMessage: string) {
 		this.errorMessage = errorMessage;
 	}
 
@@ -69,7 +69,7 @@ export default class BaseViewStore {
 			if (this.state !== ViewState.empty) {
 				this.end();
 			}
-			this.setMessage('');
+			this.setErrorMessage('');
 			result = ConfigService.config.handleHttpResult<T>(res);
 		} catch (e) {
 			result = this.handleError(e);
@@ -91,25 +91,34 @@ export default class BaseViewStore {
 			if (config?.failCallback) {
 				config?.failCallback(result);
 			}
-			const eMessage = myErrorMessage || errorMessage;
 
-			if (eMessage) {
-				this.setMessage(eMessage);
+			const handleShowErrorMessage = (isShow: boolean, message?: string) => {
+				if (timeout != null) {
+					clearTimeout(timeout);
+				}
+
+				if (message) {
+					this.setErrorMessage(message);
+				}
+
+				if (isShow && message) {
+					timeout = setTimeout(() => {
+						ConfigService.config.showErrorMessage({
+							message,
+							status,
+							errorCode,
+						});
+					}, 500);
+				}
+			};
+
+			if (status === 401 || status === 403) {
+				handleShowErrorMessage(true, errorMessage);
+			} else {
+				const eMessage = myErrorMessage || errorMessage;
+				handleShowErrorMessage(!!(showMessage && showErrorMessage), eMessage);
 			}
 
-			if (timeout != null) {
-				clearTimeout(timeout);
-			}
-
-			if (myErrorMessage || (showMessage && showErrorMessage && errorMessage)) {
-				timeout = setTimeout(() => {
-					ConfigService.config.showErrorMessage({
-						message: myErrorMessage || errorMessage || '',
-						status,
-						errorCode,
-					});
-				}, 500);
-			}
 		}
 		return result;
 	}
@@ -125,9 +134,9 @@ export default class BaseViewStore {
 	handleError(err: any): UseResult<any> {
 		this.error();
 		const response = err.response;
-		const res = ConfigService.config.handleHttpErrorResult<any>(response?.data);
-		const {errorMessage: message, errorCode} = res;
 		if (response) {
+			const res = ConfigService.config.handleHttpErrorResult(response.data, response.status);
+			const {errorMessage: message, errorCode} = res;
 			if (response.status === 400 && ConfigService.config.handle400) {
 				ConfigService.config.handle400({message, errorCode});
 			}
@@ -137,8 +146,25 @@ export default class BaseViewStore {
 			if (response.status === 401 && ConfigService?.config?.handle401) {
 				ConfigService?.config?.handle401({message});
 			}
+			if (response.status === 500 && ConfigService?.config?.handle500) {
+				ConfigService?.config?.handle500({message});
+			}
+			let useErrorMessage = message;
+			if (response.status === 500) {
+				useErrorMessage = ConfigService?.config.useSystemErrorMessage ? ConfigService?.config.systemErrorMessage : message;
+			} else if (response.status === 401) {
+				useErrorMessage = ConfigService.config.use401Message ? ConfigService.config.message401 : message;
+			} else if (response.status === 403) {
+				useErrorMessage = ConfigService.config.use403Message ? ConfigService.config.message403 : message;
+			}
+			return {...res, status: response.status, errorMessage: useErrorMessage};
 		}
-		return {...res, status: response.status || -100};
+		return {
+			success: false,
+			status: -100,
+			errorCode: '0000',
+			errorMessage: 'Internal error, check whether the code is correct',
+		};
 	}
 
 }

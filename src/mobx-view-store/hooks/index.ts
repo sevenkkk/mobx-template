@@ -10,16 +10,8 @@ import { ModalStoreConfig, ViewModalStore } from '../view-store/view-modal-store
  * @param fetch
  * @param config
  */
-export function useSubmitStore<T>(fetch: () => Promise<any>, config?: SubmitStoreConfig<any, T>) {
-	return useSubmitPStore<any, T>(fetch, config);
-}
-
-/**
- * Submit template with parameters
- * @param fetch
- * @param config
- */
-export function useSubmitPStore<P, T>(fetch: (body: P) => Promise<any>, config?: SubmitStoreConfig<P, T>) {
+export function useSubmitStore<P = Record<string, any>, T = string>(fetch: (body: P) => Promise<any>,
+																	config?: SubmitStoreConfig<P, T>): ViewSubmitStore<P, T> {
 	return useState(() => new ViewSubmitStore<P, T>(fetch, config))[0];
 }
 
@@ -28,17 +20,9 @@ export function useSubmitPStore<P, T>(fetch: (body: P) => Promise<any>, config?:
  * @param fetch
  * @param config
  */
-export function useFetchListStore<T>(fetch: () => Promise<any>, config?: ListStoreConfig<any, T>) {
-	return useFetchListPStore<any, T>(fetch, config);
-}
-
-/**
- * List template with parameters
- * @param fetch
- * @param config
- */
-export function useFetchListPStore<P, T>(fetch: (params: P) => Promise<any>, config?: ListStoreConfig<P, T>) {
-	return useState(() => new ViewListStore<P, T>(fetch, config))[0];
+export function useFetchListStore<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
+															  config?: ListStoreConfig<T, P>): ViewListStore<T, P> {
+	return useState(() => new ViewListStore<T, P>(fetch, config))[0];
 }
 
 /**
@@ -46,17 +30,9 @@ export function useFetchListPStore<P, T>(fetch: (params: P) => Promise<any>, con
  * @param fetch
  * @param config
  */
-export function useFetchPageListStore<T>(fetch: () => Promise<any>, config?: PageListStoreConfig<any, T>) {
-	return useFetchPageListPStore<any, T>(fetch, config);
-}
-
-/**
- * Page list template with parameters
- * @param fetch
- * @param config
- */
-export function useFetchPageListPStore<P, T>(fetch: (params: P) => Promise<any>, config?: PageListStoreConfig<P, T>) {
-	return useState(() => new ViewPageListStore<P, T>(fetch, config))[0];
+export function useFetchPageListStore<T, P = Record<string, any>>(fetch: (body: P) => Promise<any>,
+																  config?: PageListStoreConfig<T, P>): ViewPageListStore<T, P> {
+	return useState(() => new ViewPageListStore<T, P>(fetch, config))[0];
 }
 
 /**
@@ -64,17 +40,9 @@ export function useFetchPageListPStore<P, T>(fetch: (params: P) => Promise<any>,
  * @param fetch
  * @param config
  */
-export function useFetchObjStore<T>(fetch: () => Promise<any>, config?: ObjStoreConfig<any, T>) {
-	return useFetchObjPStore<any, T>(fetch, config);
-}
-
-/**
- * Obj template with parameters
- * @param fetch
- * @param config
- */
-export function useFetchObjPStore<P, T>(fetch: (params: P) => Promise<any>, config?: ObjStoreConfig<P, T>) {
-	return useState(() => new ViewObjStore<P, T>(fetch, config))[0];
+export function useFetchObjStore<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
+															 config?: ObjStoreConfig<T, P>): ViewObjStore<T, P> {
+	return useState(() => new ViewObjStore<T, P>(fetch, config))[0];
 }
 
 /**
@@ -89,8 +57,8 @@ export function useStore<S>(initialState: S | (() => S)): S {
  * Modal template
  * @param config
  */
-export function useModalStore(config?: ModalStoreConfig): ViewModalStore {
-	return useState(() => new ViewModalStore(config))[0];
+export function useModalStore<T = Record<string, any> | string>(config?: ModalStoreConfig): ViewModalStore<T> {
+	return useState(() => new ViewModalStore<T>(config))[0];
 }
 
 /**
@@ -99,11 +67,11 @@ export function useModalStore(config?: ModalStoreConfig): ViewModalStore {
  * @param onClose
  * @param modal
  */
-export function useModalEffect(onOpen: (data?: Record<string, any>) => void, onClose: () => void, modal: ViewModalStore) {
+export function useModalEffect<T = Record<string, any>>(onOpen: (data?: T) => void, onClose: () => void, modal: ViewModalStore<T>) {
 	useEffect(() => {
-		if (modal.showModal) {
+		if (modal.visible) {
 			onOpen(modal.data);
-		} else if (!modal.showModal) {
+		} else if (!modal.visible) {
 			onClose();
 		}
 	}, [modal, onOpen, onClose]);
@@ -114,9 +82,9 @@ export function useModalEffect(onOpen: (data?: Record<string, any>) => void, onC
  * @param onOpen
  * @param modal
  */
-export function useModalOpenEffect(onOpen: (data?: Record<string, any>) => void, modal: ViewModalStore) {
+export function useModalOpenEffect<T = Record<string, any>>(onOpen: (data?: T) => void, modal: ViewModalStore<T>) {
 	useEffect(() => {
-		if (modal.showModal) {
+		if (modal.visible) {
 			onOpen(modal.data);
 		}
 	}, [modal, onOpen]);
@@ -129,7 +97,7 @@ export function useModalOpenEffect(onOpen: (data?: Record<string, any>) => void,
  */
 export function useModalCloseEffect(onClose: () => void, modal: ViewModalStore) {
 	useEffect(() => {
-		if (!modal.showModal) {
+		if (!modal.visible) {
 			onClose();
 		}
 	}, [modal, onClose]);

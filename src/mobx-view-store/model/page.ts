@@ -1,14 +1,13 @@
-import { UseResult } from './use-result';
 import { FetchConfig } from './fetch-config';
 
-export interface PageView<T> {
-	page: number
+export interface PaginationProp {
+	current: number
 	pageSize: number
-	count: number
-	loadDataPage: (config: PageConfig<T[]>) => Promise<UseResult<T[]>>
+	total: number
 }
 
 export interface PageConfig<T> extends FetchConfig<T>{
-	page: number;
-	pageSize: number;
+	current?: number;
+	pageSize?: number;
+	replace?: boolean;
 }

@@ -2,8 +2,11 @@ import { UseResult } from './model/use-result';
 
 export interface ConfigOptions {
 	message401?: string;
+	use401Message?: boolean;
 	message403?: string;
+	use403Message?: boolean;
 	systemErrorMessage?: string;
+	useSystemErrorMessage?: boolean;
 	showErrorMessage: (data: { message: string, errorCode?: string, status?: number }) => void;
 	showSuccessMessage: (message: string) => void;
 	handle401?: (data: { message?: string }) => void;
@@ -11,7 +14,7 @@ export interface ConfigOptions {
 	handle403?: (data: { message?: string, errorCode?: string }) => void;
 	handle500?: (data: { message?: string, errorCode?: string }) => void;
 	handleHttpResult: <T>(resBody: any) => UseResult<T>;
-	handleHttpErrorResult: <T>(resBody: any) => UseResult<T>;
+	handleHttpErrorResult: <T>(resBody: any, status: number) => UseResult<T>;
 }
 
 /**
@@ -21,8 +24,11 @@ export class ConfigService {
 	// Default global configuration
 	static config: ConfigOptions = {
 		message401: 'Login has expired, please login again!',
+		use401Message: false,
 		message403: 'You do not have permission!',
+		use403Message: false,
 		systemErrorMessage: 'System exception, please contact the administrator!',
+		useSystemErrorMessage: false,
 		showErrorMessage: ({message}) => {
 			alert(message);
 		},

@@ -1,7 +1,8 @@
 import BaseViewStore from './base-view-store';
 import { action, computed, makeObservable, observable } from 'mobx';
 
-export default class ViewBaseListStore<P, T> extends BaseViewStore {
+export default class ViewBaseListStore<T, P> extends BaseViewStore {
+
 	constructor() {
 		super();
 		makeObservable(this, {
@@ -10,13 +11,18 @@ export default class ViewBaseListStore<P, T> extends BaseViewStore {
 			index: observable,
 			active: computed,
 			setIndex: action.bound,
-			hasData: action.bound,
+			hasData: computed,
 			setParams: action.bound,
+			mergeParams: action.bound,
 			setList: action.bound,
 			clear: action.bound,
 			onLoadComplete: action.bound,
 		});
 	}
+
+	// tslint:disable-next-line:no-empty
+	reload: (params?: P) => void = () => {
+	};
 
 	list: T[] = [];
 
@@ -44,11 +50,19 @@ export default class ViewBaseListStore<P, T> extends BaseViewStore {
 	}
 
 	/**
-	 * Set parameters
-	 * @param obj
+	 * merge parameters
+	 * @param params
 	 */
-	setParams(obj: P) {
-		this.params = {...(this.params || {}), ...obj};
+	mergeParams(params: Partial<P>) {
+		this.params = {...(this.params || {}), ...params};
+	}
+
+	/**
+	 * Set parameters
+	 * @param params
+	 */
+	setParams(params: Partial<P>) {
+		this.params = params;
 	}
 
 	/**

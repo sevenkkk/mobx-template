@@ -3,48 +3,58 @@ import { UseResult } from '../model/use-result';
 import { action, makeObservable, override } from 'mobx';
 import { FetchConfig } from '../model/fetch-config';
 
-export interface ListStoreConfig<P, T> {
-	defaultParams?: P,
+type getDefaultParams<T> = () => T;
+
+export interface ListStoreConfig<T, P> {
 	isDefaultSet?: boolean,
-	successCallback?: (data: T[]) => void,
+	successCallback?: (data: T[], total?: number) => void,
 	failCallback?: (res: UseResult<any>) => void
+	defaultParams?: Partial<P> | getDefaultParams<Partial<P>>,
 }
 
-export class ViewListStore<P, T> extends ViewBaseListStore<P, T> {
+export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore<T, P> {
 
-	constructor(public prepare: (params: P) => Promise<any>, public config?: ListStoreConfig<P, T>) {
+	constructor(public prepare: (params: P) => Promise<any>,
+				public config?: ListStoreConfig<T, P>) {
 		super();
 		const {defaultParams} = this.config || {isDefaultSet: true};
 		if (defaultParams) {
-			this.setParams(defaultParams);
+			if (typeof defaultParams === 'function') {
+				this.setParams(defaultParams());
+			} else {
+				this.setParams(defaultParams);
+			}
 		}
 		makeObservable(this, {loadData: action.bound, clear: override});
 	}
 
-	async loadData(params?: P, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
+	async loadData(params?: Partial<P>, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
 		if (params) {
-			this.setParams(params);
+			if (config?.replace) {
+				this.setParams(params);
+			} else {
+				this.mergeParams(params);
+			}
 		}
-
 		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
 		const res = await this.doFetch<T[]>(() => this.prepare(this.params), myConfig);
 		const {success, data} = res;
 		if (success) {
-			const {isDefaultSet} = this.config || {isDefaultSet: true};
+			const {isDefaultSet} = {isDefaultSet: true, ...(this.config || {})};
 			if (isDefaultSet && data) {
 				this.setList(data);
 			}
 			if (this.config?.successCallback) {
-				this.config?.successCallback(this.list);
+				this.config?.successCallback(data || []);
 			}
-			this.onLoadComplete(this.list);
+			this.onLoadComplete(data || []);
 		} else {
 			if (this.config?.failCallback) {
 				this.config?.failCallback(res);
 			}
 		}
 
-		return res;
+		return {...res, data: this.list};
 	}
 
 }

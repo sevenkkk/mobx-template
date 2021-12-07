@@ -8,13 +8,18 @@ export class ViewBaseBodyStore<P> extends BaseViewStore {
 		makeObservable(this, {
 			body: observable,
 			setBody: action.bound,
+			mergeBody: action.bound,
 			clear: action.bound,
 		});
 	}
 
 	body: P | any = undefined;
 
-	setBody(value: P) {
+	setBody(value: Partial<P>) {
+		this.body = value;
+	}
+
+	mergeBody(value: Partial<P>) {
 		this.body = {...this.body || {}, ...value};
 	}
 

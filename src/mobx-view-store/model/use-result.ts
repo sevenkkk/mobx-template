@@ -5,7 +5,7 @@ export interface UseResult<T> {
   success?: boolean;
   data?: T;
   errorMessage?: string;
-  totalCount?: number;
+  total?: number;
   errorCode?: string;
   status?: number;
 }
