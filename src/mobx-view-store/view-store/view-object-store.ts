@@ -52,7 +52,7 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 		this.data = {...(this.data || {}), ...data};
 	}
 
-	async loadData(params?: Partial<P>, config?: FetchConfig<T>): Promise<UseResult<T>> {
+	async loadData(params?: Partial<P> | P, config?: FetchConfig<T>): Promise<UseResult<T>> {
 		if (params) {
 			if (config?.replace) {
 				this.setParams(params);

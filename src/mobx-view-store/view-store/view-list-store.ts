@@ -28,7 +28,7 @@ export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore
 		makeObservable(this, {loadData: action.bound, clear: override});
 	}
 
-	async loadData(params?: Partial<P>, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
+	async loadData(params?: Partial<P> | P, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
 		if (params) {
 			if (config?.replace) {
 				this.setParams(params);

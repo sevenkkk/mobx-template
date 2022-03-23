@@ -71,7 +71,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		};
 	}
 
-	loadData(params?: P, config?: PageConfig<T[]>): Promise<UseResult<T[]>> {
+	loadData(params?: Partial<P> | P, config?: PageConfig<T[]>): Promise<UseResult<T[]>> {
 		const {current, pageSize, replace} = config || {};
 		if (params) {
 			if (replace) {

@@ -35,7 +35,7 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 		});
 	}
 
-	async submit(body?: Partial<P>, config?: FetchConfig<T>): Promise<UseResult<T>> {
+	async submit(body?: Partial<P> | P, config?: FetchConfig<T>): Promise<UseResult<T>> {
 		if (body) {
 			if (config?.replace) {
 				this.setBody(body);
