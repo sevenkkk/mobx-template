@@ -3,6 +3,7 @@ import { action, computed, makeObservable, observable } from 'mobx';
 import { UseResult } from '../../model/use-result';
 import { ConfigService } from '../../config-service';
 import { FetchConfig } from '../../model/fetch-config';
+import { CommonUtilsService } from '../../utils/common-utils.service';
 
 let timeout: any = null;
 
@@ -84,7 +85,7 @@ export default class BaseViewStore {
 			if (config?.successCallback) {
 				config?.successCallback(data);
 			}
-			if (mySuccessMessage || (showMessage && showSuccessMessage && this.isString(data))) {
+			if (mySuccessMessage || (showMessage && showSuccessMessage && CommonUtilsService.isString(data))) {
 				ConfigService.config.showSuccessMessage(mySuccessMessage || data);
 			}
 		} else {
@@ -121,10 +122,6 @@ export default class BaseViewStore {
 
 		}
 		return result;
-	}
-
-	isString(target: any) {
-		return target && typeof target === 'string' && target.constructor === String;
 	}
 
 	/**

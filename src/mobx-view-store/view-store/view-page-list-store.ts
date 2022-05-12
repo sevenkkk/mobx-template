@@ -17,16 +17,17 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 	total = 0;
 
 	constructor(public prepare: (params: P) => Promise<any>,
-				public config?: PageListStoreConfig<T, P>,
+	            public config?: PageListStoreConfig<T, P>,
 	) {
 		super();
 		const {defaultParams, pageSize} = this.config || {};
 		if (defaultParams) {
 			if (typeof defaultParams === 'function') {
-				this.setParams(defaultParams());
+				this.setDefaultParams(defaultParams());
 			} else {
-				this.setParams(defaultParams);
+				this.setDefaultParams(defaultParams);
 			}
+			this.setParams(this.defaultParams!);
 		}
 
 		if (pageSize) {
@@ -38,6 +39,15 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			pageSize: this.pageSize,
 		} as any);
 
+		this.reload = (_config?: { removeCount?: number, resetPageIndex?: boolean }) => {
+			const {removeCount, resetPageIndex} = _config || {};
+			if (removeCount && removeCount > 0) {
+				const _current = this.list.length === removeCount && this.current > 1 ? this.current - 1 : this.current;
+				return this.loadData(undefined, {current: _current});
+			}
+			return this.loadData(undefined, {current: resetPageIndex ? this.current : undefined});
+		};
+
 		makeObservable(this, {
 			current: observable,
 			pageSize: observable,
@@ -48,6 +58,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			setPageSize: action.bound,
 			setTotal: action.bound,
 			loadData: action.bound,
+			setOriginList: action.bound,
 		});
 	}
 
@@ -71,19 +82,30 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		};
 	}
 
-	loadData(params?: Partial<P> | P, config?: PageConfig<T[]>): Promise<UseResult<T[]>> {
-		const {current, pageSize, replace} = config || {};
-		if (params) {
-			if (replace) {
-				this.setParams(params);
+	loadData(params?: Partial<P> | P, config?: PageConfig<T[], P>): Promise<UseResult<T[]>> {
+		const {current, pageSize, replace, defaultParams} = config || {};
+		if (defaultParams) {
+			if (typeof defaultParams === 'function') {
+				this.setDefaultParams(defaultParams());
 			} else {
-				this.mergeParams(params);
+				this.setDefaultParams(defaultParams);
 			}
+		}
+		if (params) {
+			const _params = this.defaultParams ? {...this.defaultParams, ...params} : params;
+			if (replace) {
+				this.setParams(_params);
+			} else {
+				this.mergeParams(_params);
+			}
+		} else if (this.defaultParams) {
+			// 解决第一次没有设置成功
+			this.mergeParams(this.defaultParams);
 		}
 		return this.doLoadData(current || this.current, pageSize || this.pageSize, config);
 	}
 
-	loadDataPage(config: PageConfig<T[]>): Promise<UseResult<T[]>> {
+	loadDataPage(config: PageConfig<T[], P>): Promise<UseResult<T[]>> {
 		const {current, pageSize} = config;
 		return this.doLoadData(current || this.current, pageSize || this.pageSize, config);
 	}
@@ -103,9 +125,15 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		const res = await this.doFetch<T[]>(() => this.prepare(this.params), myConfig);
 		const {success, data, total} = res;
 		if (success) {
-			const {isDefaultSet} = {isDefaultSet: true, ...(this.config || {})};
+			// 设置原始数据
+			this.setOriginList(data ?? []);
+			const {isDefaultSet, postData} = {isDefaultSet: true, ...(this.config || {})};
 			if (isDefaultSet && data) {
-				this.setList(data);
+				let _list = data;
+				if (postData) {
+					_list = postData(data);
+				}
+				this.setList(_list);
 				this.setTotal(total || 0);
 			}
 			if (this.config?.successCallback) {
@@ -118,6 +146,13 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			}
 		}
 		return {...res, data: this.list};
+	}
+
+	clear() {
+		this.setCurrent(1);
+		this.setPageSize(10);
+		this.setTotal(0);
+		super.clear();
 	}
 
 }

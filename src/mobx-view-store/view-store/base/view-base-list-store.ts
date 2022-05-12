@@ -6,8 +6,10 @@ export default class ViewBaseListStore<T, P> extends BaseViewStore {
 	constructor() {
 		super();
 		makeObservable(this, {
+			originList: observable,
 			list: observable,
 			params: observable,
+			defaultParams: observable,
 			index: observable,
 			active: computed,
 			setIndex: action.bound,
@@ -15,18 +17,24 @@ export default class ViewBaseListStore<T, P> extends BaseViewStore {
 			setParams: action.bound,
 			mergeParams: action.bound,
 			setList: action.bound,
+			setDefaultParams: action.bound,
 			clear: action.bound,
 			onLoadComplete: action.bound,
 		});
 	}
 
-	// tslint:disable-next-line:no-empty
-	reload: (params?: P) => void = () => {
-	};
+	// @ts-ignore
+	reload: ((_config?: { removeCount?: number, resetPageIndex?: boolean }) => Promise<any>);
 
+	// 原始数据
+	originList: T[] = [];
+
+	// 可能被处理过的数据，如果没有处理跟rawList值一样
 	list: T[] = [];
 
 	params: P | any = undefined;
+
+	defaultParams: P | any = undefined;
 
 	index: number = -1;
 
@@ -40,6 +48,10 @@ export default class ViewBaseListStore<T, P> extends BaseViewStore {
 
 	setList(list: T[]) {
 		this.list = list;
+	}
+
+	setOriginList(data: T[]) {
+		this.originList = data;
 	}
 
 	/**
@@ -63,6 +75,14 @@ export default class ViewBaseListStore<T, P> extends BaseViewStore {
 	 */
 	setParams(params: Partial<P>) {
 		this.params = params;
+	}
+
+	/**
+	 * Set defaultParams
+	 * @param params
+	 */
+	setDefaultParams(params: Partial<P>) {
+		this.defaultParams = params;
 	}
 
 	/**

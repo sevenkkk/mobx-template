@@ -1,5 +1,5 @@
 import { PageActionType } from '../model/page-action-type.model';
-import { action, computed, makeObservable, observable } from 'mobx';
+import { action, makeObservable, observable } from 'mobx';
 
 export interface ModalStoreConfig {
 	onOpen?: (data?: Record<string, any>) => void;

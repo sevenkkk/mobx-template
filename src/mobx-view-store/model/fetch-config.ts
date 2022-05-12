@@ -8,5 +8,5 @@ export interface FetchConfig<T> {
 	myErrorMessage?: string;
 	mySuccessMessage?: string;
 	successCallback?: (data: T) => void;
-	failCallback?: (res: UseResult<any>) => void
+	failCallback?: (res: UseResult<any>) => void;
 }

@@ -2,6 +2,7 @@ import { ViewBaseBodyStore } from './base/view-base-body-store';
 import { action, makeObservable, observable, override } from 'mobx';
 import { UseResult } from '../model/use-result';
 import { FetchConfig } from '../model/fetch-config';
+import { CommonUtilsService } from '../utils/common-utils.service';
 
 type getDefaultBody<T> = () => T;
 
@@ -10,14 +11,15 @@ export interface SubmitStoreConfig<P, T> {
 	successCallback?: (data: T) => void,
 	failCallback?: (res: UseResult<any>) => void
 	defaultBody?: Partial<P> | getDefaultBody<Partial<P>>,
+	postData?: (data: T) => T,
 }
 
 export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBaseBodyStore<P> {
 
-	data: T | any = undefined;
+	data: T | undefined = undefined;
 
 	constructor(public prepare: (body: P) => Promise<any>,
-				public config?: SubmitStoreConfig<P, T>) {
+	            public config?: SubmitStoreConfig<P, T>) {
 		super();
 		const {defaultBody} = this.config || {};
 		if (defaultBody) {
@@ -37,7 +39,7 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 
 	async submit(body?: Partial<P> | P, config?: FetchConfig<T>): Promise<UseResult<T>> {
 		if (body) {
-			if (config?.replace) {
+			if (config?.replace || !CommonUtilsService.isObject(body)) {
 				this.setBody(body);
 			} else {
 				this.mergeBody(body);
@@ -47,16 +49,20 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 		const res = await this.doFetch<T>(() => this.prepare(this.body), myConfig);
 		const {success, data} = res;
 		if (success) {
-			const {isDefaultSet} = {isDefaultSet: true, ...(this.config || {})};
+			const {isDefaultSet, postData} = {isDefaultSet: true, ...(this.config || {})};
 			if (isDefaultSet && data) {
-				this.setData(data);
+				let _data = data;
+				if (postData) {
+					_data = postData(data);
+				}
+				this.setData(_data);
 			}
 			if (this.config?.successCallback) {
-				this.config?.successCallback(this.data);
+				this.config?.successCallback(this.data!);
 			}
 		} else {
 			if (this.config?.failCallback) {
-				this.config?.failCallback(this.data);
+				this.config?.failCallback(res);
 			}
 		}
 		return {...res, data: this.data};
@@ -67,7 +73,7 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 		this.setData(undefined);
 	}
 
-	setData(data: any) {
+	setData(data?: T) {
 		this.data = data;
 	}
 
