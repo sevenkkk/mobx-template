@@ -1,5 +1,5 @@
 import { action, makeObservable, observable } from 'mobx';
-import BaseViewStore from './base/base-view-store';
+import { BaseViewStore } from './base/base-view-store';
 import { UseResult } from '../model/use-result';
 import { FetchConfig } from '../model/fetch-config';
 
@@ -105,7 +105,7 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 		const res = await this.doFetch<T>(() => this.prepare(this.params), myConfig);
 		const {success, data} = res;
 		if (success) {
-			const _data = data ?? ({}as T)
+			const _data = data ?? ({} as T);
 			// 设置原始数据
 			this.setOriginData(_data);
 			const {isDefaultSet, postData} = {isDefaultSet: true, ...(this.config || {})};
@@ -118,7 +118,7 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 				this.setData(__data);
 			}
 			if (this.config?.successCallback) {
-				this.config?.successCallback(_data ?? ({}as T));
+				this.config?.successCallback(_data ?? ({} as T));
 			}
 		} else {
 			if (this.config?.failCallback) {

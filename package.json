@@ -1,6 +1,6 @@
 {
   "name": "mobx-template",
-  "version": "6.1.27",
+  "version": "6.2.10",
   "private": false,
   "description": "",
   "source": "src/index.js",
@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@jest/environment": "^27.3.1",
+    "@types/react": "^17.0.0",
     "@types/jest": "^24.0.12",
     "jest": "^24.8.0",
     "microbundle": "^0.14.1",
@@ -36,9 +37,8 @@
     "tslint": "6.1.0",
     "typescript": "3.8.3"
   },
-  "dependencies": {
+  "peerDependencies": {
     "mobx": "6.3.6",
-    "react": "^17.0.2",
-    "@types/react": "^17.0.0"
+    "react": "18.1.0"
   }
 }

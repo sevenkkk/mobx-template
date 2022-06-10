@@ -9,6 +9,8 @@ export interface ConfigOptions {
 	useSystemErrorMessage?: boolean;
 	showErrorMessage: (data: { message: string, errorCode?: string, status?: number }) => void;
 	showSuccessMessage: (message: string) => void;
+	startLoading?: () => void;
+	endLoading?: () => void;
 	handle401?: (data: { message?: string }) => void;
 	handle400?: (data: { message?: string, errorCode?: string }) => void;
 	handle403?: (data: { message?: string, errorCode?: string }) => void;
@@ -29,6 +31,14 @@ export class ConfigService {
 		use403Message: false,
 		systemErrorMessage: 'System exception, please contact the administrator!',
 		useSystemErrorMessage: false,
+		startLoading: () => {
+			// tslint:disable-next-line:no-console
+			console.log('start-loading');
+		},
+		endLoading: () => {
+			// tslint:disable-next-line:no-console
+			console.log('end-loading');
+		},
 		showErrorMessage: ({message}) => {
 			alert(message);
 		},

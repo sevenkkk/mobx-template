@@ -1,6 +1,8 @@
 import { UseResult } from './use-result';
 
 export interface FetchConfig<T> {
+	status?: boolean;
+	loading?: boolean;
 	replace?: boolean;
 	showMessage?: boolean;
 	showErrorMessage?: boolean;

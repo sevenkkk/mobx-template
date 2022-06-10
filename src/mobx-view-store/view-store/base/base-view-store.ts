@@ -7,13 +7,14 @@ import { CommonUtilsService } from '../../utils/common-utils.service';
 
 let timeout: any = null;
 
-export default class BaseViewStore {
+export class BaseViewStore {
 
 	constructor() {
 		makeObservable(this, {
 			state: observable,
 			errorMessage: observable,
 			isBusy: computed,
+			isEmpty: computed,
 			setState: action.bound,
 			start: action.bound,
 			end: action.bound,
@@ -35,6 +36,10 @@ export default class BaseViewStore {
 
 	get isBusy() {
 		return this.state === ViewState.busy;
+	}
+
+	get isEmpty() {
+		return this.state === ViewState.empty;
 	}
 
 	setErrorMessage(errorMessage: string) {
@@ -63,17 +68,30 @@ export default class BaseViewStore {
 	 * @param config
 	 */
 	async doFetch<T>(doRequest: () => Promise<any>, config?: FetchConfig<T>): Promise<UseResult<T>> {
-		this.start();
+		if (config?.status !== false) {
+			this.start();
+		}
+		if(config?.loading && ConfigService.config?.startLoading){
+			ConfigService.config?.startLoading();
+		}
 		let result;
 		try {
 			const res = await doRequest();
-			if (this.state !== ViewState.empty) {
-				this.end();
+			if (config?.status !== false) {
+				if (this.state !== ViewState.empty) {
+					this.end();
+				}
 			}
 			this.setErrorMessage('');
 			result = ConfigService.config.handleHttpResult<T>(res);
+			if(config?.loading && ConfigService.config?.endLoading){
+				ConfigService.config.endLoading();
+			}
 		} catch (e) {
-			result = this.handleError(e);
+			result = this.handleError(e, config?.status);
+			if(config?.loading && ConfigService.config?.endLoading){
+				ConfigService.config.endLoading();
+			}
 		}
 		const {success, data, errorMessage, errorCode, status} = result;
 		const showMessage = config?.showMessage;
@@ -127,9 +145,12 @@ export default class BaseViewStore {
 	/**
 	 * handle error
 	 * @param err
+	 * @param status 是否有状态
 	 */
-	handleError(err: any): UseResult<any> {
-		this.error();
+	handleError(err: any, status?: boolean): UseResult<any> {
+		if (status !== false) {
+			this.error();
+		}
 		const response = err.response;
 		if (response) {
 			const res = ConfigService.config.handleHttpErrorResult(response.data, response.status);

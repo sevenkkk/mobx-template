@@ -16,6 +16,8 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 
 	total = 0;
 
+	hasMore = false;
+
 	constructor(public prepare: (params: P) => Promise<any>,
 	            public config?: PageListStoreConfig<T, P>,
 	) {
@@ -51,6 +53,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		makeObservable(this, {
 			current: observable,
 			pageSize: observable,
+			hasMore: observable,
 			total: observable,
 			pagination: computed,
 			loadDataPage: action.bound,
@@ -59,11 +62,16 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			setTotal: action.bound,
 			loadData: action.bound,
 			setOriginList: action.bound,
+			setHasMore: action.bound,
 		});
 	}
 
 	setCurrent(current: number) {
 		this.current = current;
+	}
+
+	setHasMore(hasMore: boolean) {
+		this.hasMore = hasMore;
 	}
 
 	setPageSize(pageSize: number) {
@@ -102,7 +110,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			// 解决第一次没有设置成功
 			this.mergeParams(this.defaultParams);
 		}
-		return this.doLoadData(current || this.current, pageSize || this.pageSize, config);
+		return this.doLoadData(current || 1, pageSize || this.pageSize, config);
 	}
 
 	loadDataPage(config: PageConfig<T[], P>): Promise<UseResult<T[]>> {
@@ -118,13 +126,18 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			this.setPageSize(pageSize);
 		}
 		// @ts-ignore
-		this.mergeParams({current, pageSize});
+		this.mergeParams({current, page: current, pageSize});
 
 		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
 
 		const res = await this.doFetch<T[]>(() => this.prepare(this.params), myConfig);
 		const {success, data, total} = res;
 		if (success) {
+			if (total! > pageSize * this.current) {
+				this.setHasMore(true);
+			} else {
+				this.setHasMore(false);
+			}
 			// 设置原始数据
 			this.setOriginList(data ?? []);
 			const {isDefaultSet, postData} = {isDefaultSet: true, ...(this.config || {})};
@@ -148,9 +161,56 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		return {...res, data: this.list};
 	}
 
+
+	// 加载更多
+	async loadMore() {
+		this.setCurrent(this.current + 1);
+		// @ts-ignore
+		this.mergeParams({page: this.current});
+		const res = await this.doFetch<T[]>(() => this.prepare(this.params), {showMessage: false, status: false});
+		const {success, data: _data, total} = res;
+		if (success) {
+			if (total! > this.pageSize * this.current) {
+				this.setHasMore(true);
+			} else {
+				this.setHasMore(false);
+			}
+			// 设置原始数据
+			const list = this.list.map(item => item);
+			const data = list.concat(_data ?? []);
+			this.setOriginList(data);
+			const {isDefaultSet, postData} = {isDefaultSet: true, ...(this.config || {})};
+			if (isDefaultSet && data) {
+				let _list = data;
+				if (postData) {
+					_list = postData(data);
+				}
+				this.setList(_list);
+				this.setTotal(total || 0);
+			}
+			if (this.config?.successCallback) {
+				this.config?.successCallback(data || [], total || 0);
+			}
+			this.onLoadComplete(data || []);
+		} else {
+			this.current--;
+			if (this.config?.failCallback) {
+				this.config?.failCallback(res);
+			}
+		}
+		return {...res, data: this.list};
+	}
+
+	onLoadComplete(list: T[]) {
+		if (list.length === 0) {
+			this.empty();
+		}
+	}
+
 	clear() {
+		this.setHasMore(false);
 		this.setCurrent(1);
-		this.setPageSize(10);
+		this.setPageSize(this.config?.pageSize ?? 10);
 		this.setTotal(0);
 		super.clear();
 	}

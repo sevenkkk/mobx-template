@@ -45,7 +45,12 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 				this.mergeBody(body);
 			}
 		}
-		const myConfig = {showMessage: true, showSuccessMessage: true, showErrorMessage: true, ...(config || {})};
+		const myConfig = {
+			showMessage: true,
+			showSuccessMessage: true,
+			showErrorMessage: true,
+			loading: true, ...(config || {}),
+		};
 		const res = await this.doFetch<T>(() => this.prepare(this.body), myConfig);
 		const {success, data} = res;
 		if (success) {

@@ -1,4 +1,4 @@
-import BaseViewStore from './base-view-store';
+import { BaseViewStore } from './base-view-store';
 import { action, computed, makeObservable, observable } from 'mobx';
 
 export default class ViewBaseListStore<T, P> extends BaseViewStore {
