@@ -13,5 +13,6 @@ export * from './mobx-view-store/view-store/view-submit-store';
 
 export * from './mobx-view-store/funciton/index';
 export * from './mobx-view-store/hooks/index';
+export * from './mobx-view-store/hooks/common';
 
 export * from './mobx-view-store/config-service';

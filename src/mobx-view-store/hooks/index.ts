@@ -88,7 +88,6 @@ export function useFetchObjStore<T, P = Record<string, any>>(fetch: (params: P) 
                                                              deps?: DependencyList): ViewObjStore<T, P> {
 	const store = useMemo(() => {
 		return new ViewObjStore<T, P>(fetch, config);
-
 	}, deps ?? []);
 	useEffect(() => {
 		if (config?.autoLoad) {
