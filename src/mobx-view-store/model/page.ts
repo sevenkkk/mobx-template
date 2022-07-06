@@ -12,4 +12,5 @@ export interface PageConfig<T, P> extends FetchConfig<T> {
 	pageSize?: number;
 	replace?: boolean;
 	defaultParams?: Partial<P> | getDefaultParams<Partial<P>>,
+	autoClear?: boolean;
 }

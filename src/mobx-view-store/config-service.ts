@@ -40,10 +40,12 @@ export class ConfigService {
 			console.log('end-loading');
 		},
 		showErrorMessage: ({message}) => {
-			alert(message);
+			// tslint:disable-next-line:no-console
+			console.log(message);
 		},
 		showSuccessMessage: (message: string) => {
-			alert(message);
+			// tslint:disable-next-line:no-console
+			console.log(message);
 		},
 		handleHttpResult: (resBody: any) => {
 			return {success: true, data: resBody};

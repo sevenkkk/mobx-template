@@ -13,7 +13,7 @@ export class ViewBaseBodyStore<P> extends BaseViewStore {
 		});
 	}
 
-	body: P | any = undefined;
+	body: P | undefined | Partial<P> = undefined;
 
 	setBody(value: Partial<P>) {
 		this.body = value;

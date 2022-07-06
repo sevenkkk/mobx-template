@@ -23,18 +23,15 @@ export default class ViewBaseListStore<T, P> extends BaseViewStore {
 		});
 	}
 
-	// @ts-ignore
-	reload: ((_config?: { removeCount?: number, resetPageIndex?: boolean }) => Promise<any>);
-
 	// 原始数据
 	originList: T[] = [];
 
 	// 可能被处理过的数据，如果没有处理跟rawList值一样
 	list: T[] = [];
 
-	params: P | any = undefined;
+	params: P | Partial<P> | undefined = undefined;
 
-	defaultParams: P | any = undefined;
+	defaultParams: P | Partial<P> | undefined = undefined;
 
 	index: number = -1;
 

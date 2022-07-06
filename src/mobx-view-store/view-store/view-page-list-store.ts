@@ -66,6 +66,8 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		});
 	}
 
+	reload: ((config?: { removeCount?: number, resetPageIndex?: boolean }) => Promise<any>);
+
 	setCurrent(current: number) {
 		this.current = current;
 	}
@@ -91,7 +93,10 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 	}
 
 	loadData(params?: Partial<P> | P, config?: PageConfig<T[], P>): Promise<UseResult<T[]>> {
-		const {current, pageSize, replace, defaultParams} = config || {};
+		const {current, pageSize, replace, defaultParams, autoClear} = config || {};
+		if (autoClear) {
+			this.clear();
+		}
 		if (defaultParams) {
 			if (typeof defaultParams === 'function') {
 				this.setDefaultParams(defaultParams());
@@ -110,6 +115,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			// 解决第一次没有设置成功
 			this.mergeParams(this.defaultParams);
 		}
+		this.setHasMore(false);
 		return this.doLoadData(current || 1, pageSize || this.pageSize, config);
 	}
 
@@ -130,7 +136,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 
 		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
 
-		const res = await this.doFetch<T[]>(() => this.prepare(this.params), myConfig);
+		const res = await this.doFetch<T[]>(() => this.prepare(this.params as P), myConfig);
 		const {success, data, total} = res;
 		if (success) {
 			if (total! > pageSize * this.current) {
@@ -141,8 +147,8 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			// 设置原始数据
 			this.setOriginList(data ?? []);
 			const {isDefaultSet, postData} = {isDefaultSet: true, ...(this.config || {})};
+			let _list = data ?? [];
 			if (isDefaultSet && data) {
-				let _list = data;
 				if (postData) {
 					_list = postData(data);
 				}
@@ -150,9 +156,9 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 				this.setTotal(total || 0);
 			}
 			if (this.config?.successCallback) {
-				this.config?.successCallback(data || [], total || 0);
+				this.config?.successCallback(_list, total || 0);
 			}
-			this.onLoadComplete(data || []);
+			this.onLoadComplete(_list);
 		} else {
 			if (this.config?.failCallback) {
 				this.config?.failCallback(res);
@@ -167,7 +173,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		this.setCurrent(this.current + 1);
 		// @ts-ignore
 		this.mergeParams({page: this.current});
-		const res = await this.doFetch<T[]>(() => this.prepare(this.params), {showMessage: false, status: false});
+		const res = await this.doFetch<T[]>(() => this.prepare(this.params as P), {showMessage: false, status: false});
 		const {success, data: _data, total} = res;
 		if (success) {
 			if (total! > this.pageSize * this.current) {

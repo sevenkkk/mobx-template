@@ -11,12 +11,12 @@ export interface SubmitStoreConfig<P, T> {
 	successCallback?: (data: T) => void,
 	failCallback?: (res: UseResult<any>) => void
 	defaultBody?: Partial<P> | getDefaultBody<Partial<P>>,
-	postData?: (data: T) => T,
+	postData?: (data: any) => T,
 }
 
 export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBaseBodyStore<P> {
 
-	data: T | undefined = undefined;
+	data: T | Partial<T> | undefined = undefined;
 
 	constructor(public prepare: (body: P) => Promise<any>,
 	            public config?: SubmitStoreConfig<P, T>) {
@@ -33,6 +33,7 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 			data: observable,
 			submit: action.bound,
 			setData: action.bound,
+			mergeData: action.bound,
 			clear: override,
 		});
 	}
@@ -51,11 +52,11 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 			showErrorMessage: true,
 			loading: true, ...(config || {}),
 		};
-		const res = await this.doFetch<T>(() => this.prepare(this.body), myConfig);
+		const res = await this.doFetch<T>(() => this.prepare(this.body as P), myConfig);
 		const {success, data} = res;
 		if (success) {
 			const {isDefaultSet, postData} = {isDefaultSet: true, ...(this.config || {})};
-			if (isDefaultSet && data) {
+			if (isDefaultSet && data !== undefined) {
 				let _data = data;
 				if (postData) {
 					_data = postData(data);
@@ -63,14 +64,14 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 				this.setData(_data);
 			}
 			if (this.config?.successCallback) {
-				this.config?.successCallback(this.data!);
+				this.config?.successCallback(this.data! as T);
 			}
 		} else {
 			if (this.config?.failCallback) {
 				this.config?.failCallback(res);
 			}
 		}
-		return {...res, data: this.data};
+		return {...res, data: this.data as T};
 	}
 
 	clear() {
@@ -82,4 +83,7 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 		this.data = data;
 	}
 
+	mergeData(data: Partial<T>) {
+		this.data = {...this.data || {}, ...data};
+	}
 }

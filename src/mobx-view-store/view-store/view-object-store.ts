@@ -5,30 +5,29 @@ import { FetchConfig } from '../model/fetch-config';
 
 type getDefaultParams<T> = () => T;
 
-export interface ObjStoreConfig<T, P> {
+export interface ObjStoreConfig<T, P> extends ObjConfig<T, P> {
 	isDefaultSet?: boolean,
-	successCallback?: (data: T) => void,
-	failCallback?: (res: UseResult<any>) => void
 	defaultParams?: Partial<P> | getDefaultParams<Partial<P>>,
-	postData?: (data: T) => T,
-	autoLoad?: boolean | getDefaultParams<Partial<P>>;
-	autoClear?: boolean;
+	postData?: (data: any) => T,
+	autoLoad?: boolean | getDefaultParams<Partial<P>>,
+	autoClear?: boolean,
 }
 
 export interface ObjConfig<T, P> extends FetchConfig<T> {
 	defaultParams?: Partial<P> | getDefaultParams<Partial<P>>,
+	autoClear?: boolean,
 }
 
 export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 
 	// 原始数据
-	originData: T | any = undefined;
+	originData: T | undefined = undefined;
 
-	data: T | any = undefined;
+	data: T | undefined = undefined;
 
-	params: P | any = undefined;
+	params: P | undefined = undefined;
 
-	defaultParams: P | any = undefined;
+	defaultParams: P | undefined = undefined;
 
 	constructor(public prepare: (params: P) => Promise<any>,
 	            public config?: ObjStoreConfig<T, P>) {
@@ -52,21 +51,30 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 			loadData: action.bound,
 			clear: action.bound,
 			setData: action.bound,
+			mergeData: action.bound,
 			setDefaultParams: action.bound,
 			setOriginData: action.bound,
 		});
 	}
 
 	setParams(params: Partial<P>) {
+		// @ts-ignore
 		this.params = params;
 	}
 
 	mergeParams(params: Partial<P>) {
+		// @ts-ignore
 		this.params = {...(this.params || {}), ...params};
 	}
 
 	setData(data: Partial<T>) {
+		// @ts-ignore
 		this.data = data;
+	}
+
+	mergeData(data: Partial<T>) {
+		// @ts-ignore
+		this.data = {...(this.data || {}), ...data};
 	}
 
 	setOriginData(data: T) {
@@ -78,11 +86,15 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 	 * @param params
 	 */
 	setDefaultParams(params: Partial<P>) {
+		// @ts-ignore
 		this.defaultParams = params;
 	}
 
 	async loadData(params?: Partial<P> | P, config?: ObjConfig<T, P>): Promise<UseResult<T>> {
-		const {defaultParams} = config || {};
+		const {defaultParams, autoClear} = config || {};
+		if (autoClear) {
+			this.clear();
+		}
 		if (defaultParams) {
 			if (typeof defaultParams === 'function') {
 				this.setDefaultParams(defaultParams());
@@ -101,24 +113,30 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 			// 解决第一次没有设置成功
 			this.mergeParams(this.defaultParams);
 		}
-		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
-		const res = await this.doFetch<T>(() => this.prepare(this.params), myConfig);
+		const myConfig = {
+			showMessage: true,
+			showSuccessMessage: false,
+			showErrorMessage: true,
+			...(config || {}),
+			...(this.config || {}),
+		};
+		const res = await this.doFetch<T>(() => this.prepare(this.params as P), myConfig);
 		const {success, data} = res;
 		if (success) {
 			const _data = data ?? ({} as T);
 			// 设置原始数据
 			this.setOriginData(_data);
 			const {isDefaultSet, postData} = {isDefaultSet: true, ...(this.config || {})};
+			// tslint:disable-next-line:variable-name
+			let __data = _data;
 			if (isDefaultSet) {
-				// tslint:disable-next-line:variable-name
-				let __data = _data;
 				if (postData) {
 					__data = postData(_data);
 				}
 				this.setData(__data);
 			}
 			if (this.config?.successCallback) {
-				this.config?.successCallback(_data ?? ({} as T));
+				this.config?.successCallback(__data ?? ({} as T));
 			}
 		} else {
 			if (this.config?.failCallback) {

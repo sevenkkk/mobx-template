@@ -28,12 +28,15 @@ export function useSubmitStore<P = Record<string, any>, T = string>(fetch: (body
 export function useFetchListStore<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
                                                               config?: ListStoreConfig<T, P>,
                                                               deps?: DependencyList): ViewListStore<T, P> {
-	return useMemo(() => {
-		const store = new ViewListStore<T, P>(fetch, config);
-		if(config?.autoClear){
-			store.clear();
-		}
+	const store = useMemo(() => {
+		return new ViewListStore<T, P>(fetch, config);
+	}, deps ?? []);
+
+	useEffect(() => {
 		if (config?.autoLoad) {
+			if (config?.autoClear) {
+				store.clear();
+			}
 			if (typeof config?.autoLoad === 'function') {
 				const params = config?.autoLoad();
 				store.loadData(params).then();
@@ -41,8 +44,8 @@ export function useFetchListStore<T, P = Record<string, any>>(fetch: (params: P)
 				store.loadData().then();
 			}
 		}
-		return store;
-	}, deps ?? []);
+	}, [store]);
+	return store;
 }
 
 /**
@@ -54,12 +57,15 @@ export function useFetchListStore<T, P = Record<string, any>>(fetch: (params: P)
 export function useFetchPageListStore<T, P = Record<string, any>>(fetch: (body: P) => Promise<any>,
                                                                   config?: PageListStoreConfig<T, P>,
                                                                   deps?: DependencyList): ViewPageListStore<T, P> {
-	return useMemo(() => {
-		const store = new ViewPageListStore<T, P>(fetch, config);
-		if(config?.autoClear){
-			store.clear();
-		}
+	const store = useMemo(() => {
+		return new ViewPageListStore<T, P>(fetch, config);
+	}, deps ?? []);
+
+	useEffect(() => {
 		if (config?.autoLoad) {
+			if (config?.autoClear) {
+				store.clear();
+			}
 			if (typeof config?.autoLoad === 'function') {
 				const params = config?.autoLoad();
 				store.loadData(params).then();
@@ -67,8 +73,8 @@ export function useFetchPageListStore<T, P = Record<string, any>>(fetch: (body: 
 				store.loadData().then();
 			}
 		}
-		return store;
-	}, deps ?? []);
+	}, [store]);
+	return store;
 }
 
 /**
@@ -80,12 +86,15 @@ export function useFetchPageListStore<T, P = Record<string, any>>(fetch: (body: 
 export function useFetchObjStore<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
                                                              config?: ObjStoreConfig<T, P>,
                                                              deps?: DependencyList): ViewObjStore<T, P> {
-	return useMemo(() => {
-		const store = new ViewObjStore<T, P>(fetch, config);
-		if(config?.autoClear){
-			store.clear();
-		}
+	const store = useMemo(() => {
+		return new ViewObjStore<T, P>(fetch, config);
+
+	}, deps ?? []);
+	useEffect(() => {
 		if (config?.autoLoad) {
+			if (config?.autoClear) {
+				store.clear();
+			}
 			if (typeof config?.autoLoad === 'function') {
 				const params = config?.autoLoad();
 				store.loadData(params).then();
@@ -93,8 +102,8 @@ export function useFetchObjStore<T, P = Record<string, any>>(fetch: (params: P) 
 				store.loadData().then();
 			}
 		}
-		return store;
-	}, deps ?? []);
+	}, [store]);
+	return store;
 }
 
 /**

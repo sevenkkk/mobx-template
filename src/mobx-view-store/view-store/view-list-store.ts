@@ -5,21 +5,22 @@ import { FetchConfig } from '../model/fetch-config';
 
 export type getDefaultParams<T> = () => T;
 
-export interface ListStoreConfig<T, P> {
+export interface ListStoreConfig<T, P> extends ListConfig<T, P> {
 	isDefaultSet?: boolean,
-	successCallback?: (data: T[], total?: number) => void,
-	failCallback?: (res: UseResult<any>) => void
 	defaultParams?: Partial<P> | getDefaultParams<Partial<P>>,
-	postData?: (data: T[]) => T[],
+	postData?: (data: any[]) => T[],
 	autoLoad?: boolean | getDefaultParams<Partial<P>>;
 	autoClear?: boolean;
 }
 
-export interface ListConfig<T, P> extends FetchConfig<T> {
+export interface ListConfig<T, P> extends FetchConfig<T[]> {
 	defaultParams?: Partial<P> | getDefaultParams<Partial<P>>,
+	autoClear?: boolean;
 }
 
 export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore<T, P> {
+
+	reload: (() => Promise<any>);
 
 	constructor(public prepare: (params: P) => Promise<any>,
 	            public config?: ListStoreConfig<T, P>) {
@@ -34,15 +35,17 @@ export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore
 			this.setParams(this.defaultParams!);
 		}
 
-		this.reload = (_config?: { removeCount?: number, resetPageIndex?: boolean }) => {
-			return this.loadData();
+		this.reload = () => {
+			return this.loadData(undefined);
 		};
 		makeObservable(this, {loadData: action.bound, clear: override, setOriginList: action.bound});
 	}
 
-
 	async loadData(params?: Partial<P> | P, config?: ListConfig<T[], P>): Promise<UseResult<T[]>> {
-		const {defaultParams} = config || {};
+		const {defaultParams, autoClear} = config || {};
+		if (autoClear) {
+			this.clear();
+		}
 		if (defaultParams) {
 			if (typeof defaultParams === 'function') {
 				this.setDefaultParams(defaultParams());
@@ -57,19 +60,25 @@ export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore
 			} else {
 				this.mergeParams(_params);
 			}
-		}else if(this.defaultParams){
+		} else if (this.defaultParams) {
 			// 解决第一次没有设置成功
 			this.mergeParams(this.defaultParams);
 		}
-		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
-		const res = await this.doFetch<T[]>(() => this.prepare(this.params), myConfig);
+		const myConfig = {
+			showMessage: true,
+			showSuccessMessage: false,
+			showErrorMessage: true,
+			...(config || {}),
+			...(this.config || {}),
+		};
+		const res = await this.doFetch<T[]>(() => this.prepare(this.params as P), myConfig as FetchConfig<T[]>);
 		const {success, data} = res;
 		if (success) {
 			// 设置原始数据
 			this.setOriginList(data ?? []);
 			const {isDefaultSet, postData} = {isDefaultSet: true, ...(this.config || {})};
+			let _list = data ?? [];
 			if (isDefaultSet && data) {
-				let _list = data;
 				if (postData) {
 					_list = postData(data);
 				}
@@ -77,9 +86,9 @@ export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore
 			}
 
 			if (this.config?.successCallback) {
-				this.config?.successCallback(data || []);
+				this.config?.successCallback(_list);
 			}
-			this.onLoadComplete(data || []);
+			this.onLoadComplete(_list);
 		} else {
 			if (this.config?.failCallback) {
 				this.config?.failCallback(res);
