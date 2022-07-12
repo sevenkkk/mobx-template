@@ -11,6 +11,7 @@ export interface ListStoreConfig<T, P> extends ListConfig<T, P> {
 	postData?: (data: any[]) => T[],
 	autoLoad?: boolean | getDefaultParams<Partial<P>>;
 	autoClear?: boolean;
+	defaultIndex?: number;
 }
 
 export interface ListConfig<T, P> extends FetchConfig<T[]> {
@@ -68,9 +69,13 @@ export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore
 			showMessage: true,
 			showSuccessMessage: false,
 			showErrorMessage: true,
-			...(config || {}),
 			...(this.config || {}),
+			...(config || {}),
 		};
+
+		if (this.config?.defaultIndex !== undefined && this.index < 0) {
+			this.setIndex(this.config?.defaultIndex);
+		}
 		const res = await this.doFetch<T[]>(() => this.prepare(this.params as P), myConfig as FetchConfig<T[]>);
 		const {success, data} = res;
 		if (success) {

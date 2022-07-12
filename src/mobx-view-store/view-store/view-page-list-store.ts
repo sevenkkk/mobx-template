@@ -134,7 +134,18 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		// @ts-ignore
 		this.mergeParams({current, page: current, pageSize});
 
-		const myConfig = {showMessage: true, showSuccessMessage: false, showErrorMessage: true, ...(config || {})};
+
+		const myConfig = {
+			showMessage: true,
+			showSuccessMessage: false,
+			showErrorMessage: true,
+			...(this.config || {}),
+			...(config || {}),
+		};
+
+		if (this.config?.defaultIndex !== undefined && this.index < 0) {
+			this.setIndex(this.config?.defaultIndex);
+		}
 
 		const res = await this.doFetch<T[]>(() => this.prepare(this.params as P), myConfig);
 		const {success, data, total} = res;

@@ -50,7 +50,9 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 			showMessage: true,
 			showSuccessMessage: true,
 			showErrorMessage: true,
-			loading: true, ...(config || {}),
+			loading: true,
+			...(this.config || {}),
+			...(config || {}),
 		};
 		const res = await this.doFetch<T>(() => this.prepare(this.body as P), myConfig);
 		const {success, data} = res;
