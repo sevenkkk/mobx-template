@@ -31,27 +31,23 @@ export class ConfigService {
 		use403Message: false,
 		systemErrorMessage: 'System exception, please contact the administrator!',
 		useSystemErrorMessage: false,
-		startLoading: () => {
-			// tslint:disable-next-line:no-console
-			console.log('start-loading');
-		},
-		endLoading: () => {
-			// tslint:disable-next-line:no-console
-			console.log('end-loading');
-		},
 		showErrorMessage: ({message}) => {
-			// tslint:disable-next-line:no-console
-			console.log(message);
+			if (window) {
+				alert(message);
+			}
 		},
 		showSuccessMessage: (message: string) => {
-			// tslint:disable-next-line:no-console
-			console.log(message);
+			if (window) {
+				alert(message);
+			}
 		},
-		handleHttpResult: (resBody: any) => {
-			return {success: true, data: resBody};
+		handleHttpResult: (resBody: any): UseResult<any> => {
+			const {success, errorCode, errorMessage, payload, count} = resBody || {};
+			return {success, errorCode, errorMessage, data: payload, total: count || 0};
 		},
-		handleHttpErrorResult: (resBody: any) => {
-			return {success: false, data: resBody};
+		handleHttpErrorResult: (resBody: any): UseResult<any> => {
+			const {success, errorCode, errorMessage} = resBody || {};
+			return {success, errorCode, errorMessage};
 		},
 	};
 
