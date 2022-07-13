@@ -11,7 +11,7 @@ import { ModalStoreConfig, ViewModalStore } from '../view-store/view-modal-store
  * @param config
  * @param deps
  */
-export function useSubmitStore<P = Record<string, any>, T = string>(fetch: (body: P) => Promise<any>,
+export function useSubmit<P = Record<string, any>, T = string>(fetch: (body: P) => Promise<any>,
                                                                     config?: SubmitStoreConfig<P, T>,
                                                                     deps?: DependencyList): ViewSubmitStore<P, T> {
 	return useMemo(() => {
@@ -25,7 +25,7 @@ export function useSubmitStore<P = Record<string, any>, T = string>(fetch: (body
  * @param config
  * @param deps
  */
-export function useFetchListStore<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
+export function useFetchList<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
                                                               config?: ListStoreConfig<T, P>,
                                                               deps?: DependencyList): ViewListStore<T, P> {
 	const store = useMemo(() => {
@@ -54,7 +54,7 @@ export function useFetchListStore<T, P = Record<string, any>>(fetch: (params: P)
  * @param config
  * @param deps
  */
-export function useFetchPageListStore<T, P = Record<string, any>>(fetch: (body: P) => Promise<any>,
+export function useFetchPageList<T, P = Record<string, any>>(fetch: (body: P) => Promise<any>,
                                                                   config?: PageListStoreConfig<T, P>,
                                                                   deps?: DependencyList): ViewPageListStore<T, P> {
 	const store = useMemo(() => {
@@ -83,7 +83,7 @@ export function useFetchPageListStore<T, P = Record<string, any>>(fetch: (body: 
  * @param config
  * @param deps
  */
-export function useFetchObjStore<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
+export function useFetch<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
                                                              config?: ObjStoreConfig<T, P>,
                                                              deps?: DependencyList): ViewObjStore<T, P> {
 	const store = useMemo(() => {
@@ -117,7 +117,7 @@ export function useStore<S>(initialState: S | (() => S)): S {
  * Modal template
  * @param config
  */
-export function useModalStore<T = Record<string, any> | string>(config?: ModalStoreConfig): ViewModalStore<T> {
+export function useModal<T = Record<string, any> | string>(config?: ModalStoreConfig): ViewModalStore<T> {
 	return new ViewModalStore<T>(config);
 }
 

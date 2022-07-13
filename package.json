@@ -1,6 +1,6 @@
 {
   "name": "mobx-template",
-  "version": "6.3.4",
+  "version": "6.3.5",
   "private": false,
   "description": "",
   "source": "src/index.js",
@@ -39,6 +39,7 @@
   },
   "peerDependencies": {
     "mobx": "6.3.6",
+    "axios": "^0.27.2",
     "react": "18.1.0 || ^16 || ^17"
   },
   "dependencies": {

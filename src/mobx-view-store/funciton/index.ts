@@ -9,7 +9,7 @@ import { ModalStoreConfig, ViewModalStore } from '../view-store/view-modal-store
  * @param fetch
  * @param config
  */
-export function fromSubmitStore<P = Record<string, any>, T = string>(fetch: (body: P) => Promise<any>,
+export function fromSubmit<P = Record<string, any>, T = string>(fetch: (body: P) => Promise<any>,
                                                                      config?: SubmitStoreConfig<P, T>): ViewSubmitStore<P, T> {
 	return new ViewSubmitStore<P, T>(fetch, config);
 }
@@ -19,7 +19,7 @@ export function fromSubmitStore<P = Record<string, any>, T = string>(fetch: (bod
  * @param fetch
  * @param config
  */
-export function fromListStore<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
+export function fromFetchList<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
                                                           config?: ListStoreConfig<T, P>): ViewListStore<T, P> {
 	return new ViewListStore<T, P>(fetch, config);
 }
@@ -29,7 +29,7 @@ export function fromListStore<T, P = Record<string, any>>(fetch: (params: P) => 
  * @param fetch
  * @param config
  */
-export function fromPageListStore<T, P = Record<string, any>>(fetch: (body: P) => Promise<any>,
+export function fromFetchPageList<T, P = Record<string, any>>(fetch: (body: P) => Promise<any>,
                                                               config?: PageListStoreConfig<T, P>): ViewPageListStore<T, P> {
 	return new ViewPageListStore<T, P>(fetch, config);
 }
@@ -39,7 +39,7 @@ export function fromPageListStore<T, P = Record<string, any>>(fetch: (body: P) =
  * @param fetch
  * @param config
  */
-export function fromObjStore<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
+export function fromFetch<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
                                                          config?: ObjStoreConfig<T, P>): ViewObjStore<T, P> {
 	return new ViewObjStore<T, P>(fetch, config);
 }
@@ -48,7 +48,7 @@ export function fromObjStore<T, P = Record<string, any>>(fetch: (params: P) => P
  * Modal template
  * @param config
  */
-export function fromModalStore<T = Record<string, any>>(config?: ModalStoreConfig): ViewModalStore<T> {
+export function fromModal<T = Record<string, any>>(config?: ModalStoreConfig): ViewModalStore<T> {
 	return new ViewModalStore<T>(config);
 }
 
