@@ -15,8 +15,8 @@ export interface ConfigOptions {
 	handle400?: (data: { message?: string, errorCode?: string }) => void;
 	handle403?: (data: { message?: string, errorCode?: string }) => void;
 	handle500?: (data: { message?: string, errorCode?: string }) => void;
-	handleHttpResult: <T>(resBody: any) => UseResult<T>;
-	handleHttpErrorResult: <T>(resBody: any, status: number) => UseResult<T>;
+	handleHttpResult?: <T>(resBody: any) => UseResult<T>;
+	handleHttpErrorResult?: <T>(resBody: any, status: number) => UseResult<T>;
 }
 
 /**

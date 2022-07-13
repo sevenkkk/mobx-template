@@ -166,13 +166,13 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 				this.setList(_list);
 				this.setTotal(total || 0);
 			}
-			if (this.config?.successCallback) {
-				this.config?.successCallback(_list, total || 0);
+			if (myConfig?.successCallback) {
+				myConfig?.successCallback(_list, total || 0);
 			}
 			this.onLoadComplete(_list);
 		} else {
-			if (this.config?.failCallback) {
-				this.config?.failCallback(res);
+			if (myConfig?.failCallback) {
+				myConfig?.failCallback(res);
 			}
 		}
 		return {...res, data: this.list};

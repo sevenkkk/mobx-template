@@ -83,7 +83,7 @@ export class BaseViewStore {
 				}
 			}
 			this.setErrorMessage('');
-			result = ConfigService.config.handleHttpResult<T>(res);
+			result = ConfigService.config.handleHttpResult!<T>(res);
 			if(config?.loading && ConfigService.config?.endLoading){
 				ConfigService.config.endLoading();
 			}
@@ -100,17 +100,10 @@ export class BaseViewStore {
 		const myErrorMessage = config?.myErrorMessage;
 		const mySuccessMessage = config?.mySuccessMessage;
 		if (success) {
-			if (config?.successCallback) {
-				config?.successCallback(data);
-			}
 			if (mySuccessMessage || (showMessage && showSuccessMessage && CommonUtilsService.isString(data))) {
 				ConfigService.config.showSuccessMessage(mySuccessMessage || data);
 			}
 		} else {
-			if (config?.failCallback) {
-				config?.failCallback(result);
-			}
-
 			const handleShowErrorMessage = (isShow: boolean, message?: string) => {
 				if (timeout != null) {
 					clearTimeout(timeout);
@@ -153,7 +146,7 @@ export class BaseViewStore {
 		}
 		const response = err.response;
 		if (response) {
-			const res = ConfigService.config.handleHttpErrorResult(response.data, response.status);
+			const res = ConfigService.config.handleHttpErrorResult!(response.data, response.status);
 			const {errorMessage: message, errorCode} = res;
 			if (response.status === 400 && ConfigService.config.handle400) {
 				ConfigService.config.handle400({message, errorCode});

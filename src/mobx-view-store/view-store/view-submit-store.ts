@@ -65,12 +65,12 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 				}
 				this.setData(_data);
 			}
-			if (this.config?.successCallback) {
-				this.config?.successCallback(this.data! as T);
+			if (myConfig.successCallback) {
+				myConfig.successCallback(this.data! as T);
 			}
 		} else {
-			if (this.config?.failCallback) {
-				this.config?.failCallback(res);
+			if (myConfig.failCallback) {
+				myConfig.failCallback(res);
 			}
 		}
 		return {...res, data: this.data as T};

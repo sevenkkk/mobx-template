@@ -90,13 +90,13 @@ export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore
 				this.setList(_list);
 			}
 
-			if (this.config?.successCallback) {
-				this.config?.successCallback(_list);
+			if (myConfig?.successCallback) {
+				myConfig?.successCallback(_list as any);
 			}
 			this.onLoadComplete(_list);
 		} else {
-			if (this.config?.failCallback) {
-				this.config?.failCallback(res);
+			if (myConfig?.failCallback) {
+				myConfig?.failCallback(res);
 			}
 		}
 

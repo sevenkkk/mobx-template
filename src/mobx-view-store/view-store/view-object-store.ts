@@ -135,12 +135,12 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 				}
 				this.setData(__data);
 			}
-			if (this.config?.successCallback) {
-				this.config?.successCallback(__data ?? ({} as T));
+			if (myConfig?.successCallback) {
+				myConfig?.successCallback(__data ?? ({} as T));
 			}
 		} else {
-			if (this.config?.failCallback) {
-				this.config?.failCallback(res);
+			if (myConfig?.failCallback) {
+				myConfig?.failCallback(res);
 			}
 		}
 		return {...res, data: this.data};
