@@ -4,6 +4,7 @@ import { action, computed, makeObservable, observable } from 'mobx';
 import { UseResult } from '../model/use-result';
 import { ListStoreConfig } from './view-list-store';
 import { FetchConfig } from '../model/fetch-config';
+import { getRequest } from '../utils/request';
 
 export interface PageListStoreConfig<T, P> extends ListStoreConfig<T, P> {
 	pageSize?: number,
@@ -18,7 +19,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 
 	hasMore = false;
 
-	constructor(public prepare: (params: P) => Promise<any>,
+	constructor(public prepare: ((params: P) => Promise<any>) | string,
 	            public config?: PageListStoreConfig<T, P>,
 	) {
 		super();
@@ -93,7 +94,11 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 	}
 
 	loadData(params?: Partial<P> | P, config?: PageConfig<T[], P>): Promise<UseResult<T[]>> {
-		const {current, pageSize, replace, defaultParams, autoClear} = config || {};
+		const {current, pageSize, replace, defaultParams, autoClear} = {
+			...(this.config || {}),
+			...(config || {}),
+		};
+
 		if (autoClear) {
 			this.clear();
 		}
@@ -147,7 +152,13 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			this.setIndex(this.config?.defaultIndex);
 		}
 
-		const res = await this.doFetch<T[]>(() => this.prepare(this.params as P), myConfig);
+		const res = await this.doFetch<T[]>(() => {
+			if (typeof this.prepare === 'function') {
+				return this.prepare(this.params as P);
+			} else {
+				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), this.params as P, {needAuth: myConfig?.needAuth});
+			}
+		}, myConfig);
 		const {success, data, total} = res;
 		if (success) {
 			if (total! > pageSize * this.current) {
@@ -184,7 +195,13 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		this.setCurrent(this.current + 1);
 		// @ts-ignore
 		this.mergeParams({page: this.current});
-		const res = await this.doFetch<T[]>(() => this.prepare(this.params as P), {showMessage: false, status: false});
+		const res = await this.doFetch<T[]>(() => {
+			if (typeof this.prepare === 'function') {
+				return this.prepare(this.params as P);
+			} else {
+				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), this.params as P);
+			}
+		}, {showMessage: false, status: false});
 		const {success, data: _data, total} = res;
 		if (success) {
 			if (total! > this.pageSize * this.current) {

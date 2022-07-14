@@ -62,6 +62,7 @@ export class BaseViewStore {
 		this.setState(ViewState.empty);
 	}
 
+
 	/**
 	 * doFetch
 	 * @param doRequest

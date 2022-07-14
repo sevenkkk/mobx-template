@@ -10,7 +10,7 @@ export interface CommonListConfig<T, P> extends ListStoreConfig<T, P> {
 
 export function useCommonListStore<T, P = Record<string, any>>(
 	key: string,
-	fetch: (params: P) => Promise<any>,
+	fetch: ((params: P) => Promise<any>) | string,
 	config?: CommonListConfig<T, P>,
 ): ViewListStore<T, P> {
 	const store = useMemo(() => {
@@ -35,7 +35,7 @@ export interface CommonObjConfig<T, P> extends ObjStoreConfig<T, P> {
 
 export function useCommonObjStore<T, P = Record<string, any>>(
 	key: string,
-	fetch: (params: P) => Promise<any>,
+	fetch: ((params: P) => Promise<any>) | string,
 	config?: CommonObjConfig<T, P>,
 ): ViewObjStore<T, P> {
 	const store = useMemo(() => {

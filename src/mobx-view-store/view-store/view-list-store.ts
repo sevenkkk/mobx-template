@@ -2,6 +2,7 @@ import ViewBaseListStore from './base/view-base-list-store';
 import { UseResult } from '../model/use-result';
 import { action, makeObservable, override } from 'mobx';
 import { FetchConfig } from '../model/fetch-config';
+import { getRequest } from '../utils/request';
 
 export type getDefaultParams<T> = () => T;
 
@@ -23,7 +24,7 @@ export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore
 
 	reload: (() => Promise<any>);
 
-	constructor(public prepare: (params: P) => Promise<any>,
+	constructor(public prepare: ((params: P) => Promise<any>) | string,
 	            public config?: ListStoreConfig<T, P>) {
 		super();
 		const {defaultParams} = this.config || {isDefaultSet: true};
@@ -43,7 +44,10 @@ export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore
 	}
 
 	async loadData(params?: Partial<P> | P, config?: ListConfig<T[], P>): Promise<UseResult<T[]>> {
-		const {defaultParams, autoClear} = config || {};
+		const {defaultParams, autoClear} = {
+			...(this.config || {}),
+			...(config || {}),
+		};
 		if (autoClear) {
 			this.clear();
 		}
@@ -76,7 +80,13 @@ export class ViewListStore<T, P = Record<string, any>> extends ViewBaseListStore
 		if (this.config?.defaultIndex !== undefined && this.index < 0) {
 			this.setIndex(this.config?.defaultIndex);
 		}
-		const res = await this.doFetch<T[]>(() => this.prepare(this.params as P), myConfig as FetchConfig<T[]>);
+		const res = await this.doFetch<T[]>(() => {
+			if (typeof this.prepare === 'function') {
+				return this.prepare(this.params as P);
+			} else {
+				return getRequest(this.config?.method ?? (this.params ? 'POST' : 'GET'), (this.prepare as string), (this.params ?? (this.config?.method === 'POST' || this.config?.method === 'post' ? {} : undefined)) as P, {needAuth: myConfig?.needAuth});
+			}
+		}, myConfig as FetchConfig<T[]>);
 		const {success, data} = res;
 		if (success) {
 			// 设置原始数据

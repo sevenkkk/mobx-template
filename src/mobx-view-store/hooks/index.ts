@@ -11,7 +11,7 @@ import { ModalStoreConfig, ViewModalStore } from '../view-store/view-modal-store
  * @param config
  * @param deps
  */
-export function useSubmit<P = Record<string, any>, T = string>(fetch: (body: P) => Promise<any>,
+export function useSubmit<P = Record<string, any>, T = string>(fetch: ((body: P) => Promise<any>) | string,
                                                                     config?: SubmitStoreConfig<P, T>,
                                                                     deps?: DependencyList): ViewSubmitStore<P, T> {
 	return useMemo(() => {
@@ -25,7 +25,7 @@ export function useSubmit<P = Record<string, any>, T = string>(fetch: (body: P) 
  * @param config
  * @param deps
  */
-export function useFetchList<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
+export function useFetchList<T, P = Record<string, any>>(fetch: ((params: P) => Promise<any>) | string,
                                                               config?: ListStoreConfig<T, P>,
                                                               deps?: DependencyList): ViewListStore<T, P> {
 	const store = useMemo(() => {
@@ -54,7 +54,7 @@ export function useFetchList<T, P = Record<string, any>>(fetch: (params: P) => P
  * @param config
  * @param deps
  */
-export function useFetchPageList<T, P = Record<string, any>>(fetch: (body: P) => Promise<any>,
+export function useFetchPageList<T, P = Record<string, any>>(fetch:((params: P) => Promise<any>) | string,
                                                                   config?: PageListStoreConfig<T, P>,
                                                                   deps?: DependencyList): ViewPageListStore<T, P> {
 	const store = useMemo(() => {
@@ -83,7 +83,7 @@ export function useFetchPageList<T, P = Record<string, any>>(fetch: (body: P) =>
  * @param config
  * @param deps
  */
-export function useFetch<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
+export function useFetch<T, P = Record<string, any>>(fetch: ((params: P) => Promise<any>) | string,
                                                              config?: ObjStoreConfig<T, P>,
                                                              deps?: DependencyList): ViewObjStore<T, P> {
 	const store = useMemo(() => {

@@ -15,4 +15,7 @@ export * from './mobx-view-store/funciton/index';
 export * from './mobx-view-store/hooks/index';
 export * from './mobx-view-store/hooks/common';
 
+export * from './mobx-view-store/utils/request';
+
 export * from './mobx-view-store/config-service';
+export * from './mobx-view-store/mobx-view-provider';

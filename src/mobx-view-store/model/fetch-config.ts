@@ -1,6 +1,9 @@
 import { UseResult } from './use-result';
+import { Method } from 'axios';
 
 export interface FetchConfig<T> {
+	needAuth?: boolean;
+	method?: Method;
 	status?: boolean;
 	loading?: boolean;
 	replace?: boolean;

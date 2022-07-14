@@ -2,6 +2,7 @@ import { action, makeObservable, observable } from 'mobx';
 import { BaseViewStore } from './base/base-view-store';
 import { UseResult } from '../model/use-result';
 import { FetchConfig } from '../model/fetch-config';
+import { getRequest } from '../utils/request';
 
 type getDefaultParams<T> = () => T;
 
@@ -29,7 +30,7 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 
 	defaultParams: P | undefined = undefined;
 
-	constructor(public prepare: (params: P) => Promise<any>,
+	constructor(public prepare: ((params: P) => Promise<any>) | string,
 	            public config?: ObjStoreConfig<T, P>) {
 		super();
 		const {defaultParams} = this.config || {};
@@ -91,7 +92,10 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 	}
 
 	async loadData(params?: Partial<P> | P, config?: ObjConfig<T, P>): Promise<UseResult<T>> {
-		const {defaultParams, autoClear} = config || {};
+		const {defaultParams, autoClear} = {
+			...(this.config || {}),
+			...(config || {}),
+		};
 		if (autoClear) {
 			this.clear();
 		}
@@ -120,7 +124,13 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 			...(config || {}),
 			...(this.config || {}),
 		};
-		const res = await this.doFetch<T>(() => this.prepare(this.params as P), myConfig);
+		const res = await this.doFetch<T>(() => {
+			if (typeof this.prepare === 'function') {
+				return this.prepare(this.params as P);
+			} else {
+				return getRequest(this.config?.method ?? (this.params ? 'POST' : 'GET'), (this.prepare as string), (this.params ?? (this.config?.method === 'POST' || this.config?.method === 'post' ? {} : undefined)) as P, {needAuth: myConfig?.needAuth});
+			}
+		}, myConfig);
 		const {success, data} = res;
 		if (success) {
 			const _data = data ?? ({} as T);

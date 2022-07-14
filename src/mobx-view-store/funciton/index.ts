@@ -9,8 +9,8 @@ import { ModalStoreConfig, ViewModalStore } from '../view-store/view-modal-store
  * @param fetch
  * @param config
  */
-export function fromSubmit<P = Record<string, any>, T = string>(fetch: (body: P) => Promise<any>,
-                                                                     config?: SubmitStoreConfig<P, T>): ViewSubmitStore<P, T> {
+export function fromSubmit<P = Record<string, any>, T = string>(fetch: ((body: P) => Promise<any>) | string,
+                                                                config?: SubmitStoreConfig<P, T>): ViewSubmitStore<P, T> {
 	return new ViewSubmitStore<P, T>(fetch, config);
 }
 
@@ -19,7 +19,7 @@ export function fromSubmit<P = Record<string, any>, T = string>(fetch: (body: P)
  * @param fetch
  * @param config
  */
-export function fromFetchList<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
+export function fromFetchList<T, P = Record<string, any>>(fetch: ((params: P) => Promise<any>) | string,
                                                           config?: ListStoreConfig<T, P>): ViewListStore<T, P> {
 	return new ViewListStore<T, P>(fetch, config);
 }
@@ -29,7 +29,7 @@ export function fromFetchList<T, P = Record<string, any>>(fetch: (params: P) => 
  * @param fetch
  * @param config
  */
-export function fromFetchPageList<T, P = Record<string, any>>(fetch: (body: P) => Promise<any>,
+export function fromFetchPageList<T, P = Record<string, any>>(fetch: ((params: P) => Promise<any>) | string,
                                                               config?: PageListStoreConfig<T, P>): ViewPageListStore<T, P> {
 	return new ViewPageListStore<T, P>(fetch, config);
 }
@@ -39,8 +39,8 @@ export function fromFetchPageList<T, P = Record<string, any>>(fetch: (body: P) =
  * @param fetch
  * @param config
  */
-export function fromFetch<T, P = Record<string, any>>(fetch: (params: P) => Promise<any>,
-                                                         config?: ObjStoreConfig<T, P>): ViewObjStore<T, P> {
+export function fromFetch<T, P = Record<string, any>>(fetch: ((params: P) => Promise<any>) | string,
+                                                      config?: ObjStoreConfig<T, P>): ViewObjStore<T, P> {
 	return new ViewObjStore<T, P>(fetch, config);
 }
 
