@@ -22,6 +22,7 @@ export interface TemplateConfigOptions {
 	handleHttpResult?: <T>(resBody: any) => UseResult<T>;
 	handleHttpErrorResult?: <T>(resBody: any, status: number) => UseResult<T>;
 	handleHttpInstance?: (axios: AxiosInstance) => void;
+	handlePage?: (page: number, pageSize: number) => any;
 }
 
 /**
@@ -45,6 +46,9 @@ export class ConfigService {
 			if (window) {
 				alert(message);
 			}
+		},
+		handlePage: (page, pageSize) => {
+			return {page, pageSize};
 		},
 		handleHttpResult: (resBody: any): UseResult<any> => {
 			const {success, errorCode, errorMessage, payload, count} = resBody || {};

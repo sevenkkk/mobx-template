@@ -11,13 +11,14 @@ export interface SubmitStoreConfig<P, T> extends FetchConfig<T> {
 	isDefaultSet?: boolean,
 	successCallback?: (data: T) => void,
 	failCallback?: (res: UseResult<any>) => void
-	defaultBody?: Partial<P> | getDefaultBody<Partial<P>>,
+	defaultBody?: P | Partial<P> | getDefaultBody<(Partial<P> | P)>,
 	postData?: (data: any) => T,
+	postBody?: (body: P) => any,
 }
 
 export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBaseBodyStore<P> {
 
-	data: T | Partial<T> | undefined = undefined;
+	data: T | undefined = undefined;
 
 	constructor(public prepare: ((body: P) => Promise<any>) | string,
 	            public config?: SubmitStoreConfig<P, T>) {
@@ -25,6 +26,7 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 		const {defaultBody} = this.config || {};
 		if (defaultBody) {
 			if (typeof defaultBody === 'function') {
+				// @ts-ignore
 				this.setBody(defaultBody());
 			} else {
 				this.setBody(defaultBody);
@@ -55,11 +57,14 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 			...(this.config || {}),
 			...(config || {}),
 		};
+
+		const _body = myConfig.postBody ? myConfig.postBody(this.body as P) : this.body;
+
 		const res = await this.doFetch<T>(() => {
 			if (typeof this.prepare === 'function') {
-				return this.prepare(this.body as P);
+				return this.prepare(_body as P);
 			} else {
-				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), (this.body ?? {}) as P, {needAuth: myConfig?.needAuth});
+				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), (_body ?? {}) as P, {needAuth: myConfig?.needAuth});
 			}
 		}, myConfig);
 		const {success, data} = res;
@@ -93,6 +98,7 @@ export class ViewSubmitStore<P = Record<string, any>, T = string> extends ViewBa
 	}
 
 	mergeData(data: Partial<T>) {
+		// @ts-ignore
 		this.data = {...this.data || {}, ...data};
 	}
 }

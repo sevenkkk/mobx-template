@@ -5,6 +5,7 @@ import { UseResult } from '../model/use-result';
 import { ListStoreConfig } from './view-list-store';
 import { FetchConfig } from '../model/fetch-config';
 import { getRequest } from '../utils/request';
+import { ConfigService } from '../config-service';
 
 export interface PageListStoreConfig<T, P> extends ListStoreConfig<T, P> {
 	pageSize?: number,
@@ -12,7 +13,7 @@ export interface PageListStoreConfig<T, P> extends ListStoreConfig<T, P> {
 
 export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListStore<T, P> {
 
-	current = 1;
+	page = 1;
 	pageSize = 10;
 
 	total = 0;
@@ -26,6 +27,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		const {defaultParams, pageSize} = this.config || {};
 		if (defaultParams) {
 			if (typeof defaultParams === 'function') {
+				// @ts-ignore
 				this.setDefaultParams(defaultParams());
 			} else {
 				this.setDefaultParams(defaultParams);
@@ -37,28 +39,23 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			this.setPageSize(pageSize);
 		}
 
-		this.setParams({
-			current: this.current,
-			pageSize: this.pageSize,
-		} as any);
-
 		this.reload = (_config?: { removeCount?: number, resetPageIndex?: boolean }) => {
 			const {removeCount, resetPageIndex} = _config || {};
 			if (removeCount && removeCount > 0) {
-				const _current = this.list.length === removeCount && this.current > 1 ? this.current - 1 : this.current;
-				return this.loadData(undefined, {current: _current});
+				const _page = this.list.length === removeCount && this.page > 1 ? this.page - 1 : this.page;
+				return this.loadData(undefined, {page: _page});
 			}
-			return this.loadData(undefined, {current: resetPageIndex ? this.current : undefined});
+			return this.loadData(undefined, {page: resetPageIndex ? this.page : undefined});
 		};
 
 		makeObservable(this, {
-			current: observable,
+			page: observable,
 			pageSize: observable,
 			hasMore: observable,
 			total: observable,
 			pagination: computed,
 			loadDataPage: action.bound,
-			setCurrent: action.bound,
+			setPage: action.bound,
 			setPageSize: action.bound,
 			setTotal: action.bound,
 			loadData: action.bound,
@@ -69,8 +66,8 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 
 	reload: ((config?: { removeCount?: number, resetPageIndex?: boolean }) => Promise<any>);
 
-	setCurrent(current: number) {
-		this.current = current;
+	setPage(page: number) {
+		this.page = page;
 	}
 
 	setHasMore(hasMore: boolean) {
@@ -88,13 +85,13 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 	get pagination(): PaginationProp {
 		return {
 			total: this.total,
-			current: this.current,
+			page: this.page,
 			pageSize: this.pageSize,
 		};
 	}
 
 	loadData(params?: Partial<P> | P, config?: PageConfig<T[], P>): Promise<UseResult<T[]>> {
-		const {current, pageSize, replace, defaultParams, autoClear} = {
+		const {page, pageSize, replace, defaultParams, autoClear} = {
 			...(this.config || {}),
 			...(config || {}),
 		};
@@ -104,6 +101,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 		}
 		if (defaultParams) {
 			if (typeof defaultParams === 'function') {
+				// @ts-ignore
 				this.setDefaultParams(defaultParams());
 			} else {
 				this.setDefaultParams(defaultParams);
@@ -121,24 +119,21 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			this.mergeParams(this.defaultParams);
 		}
 		this.setHasMore(false);
-		return this.doLoadData(current || 1, pageSize || this.pageSize, config);
+		return this.doLoadData(page || 1, pageSize || this.pageSize, config);
 	}
 
 	loadDataPage(config: PageConfig<T[], P>): Promise<UseResult<T[]>> {
-		const {current, pageSize} = config;
-		return this.doLoadData(current || this.current, pageSize || this.pageSize, config);
+		const {page, pageSize} = config;
+		return this.doLoadData(page || this.page, pageSize || this.pageSize, config);
 	}
 
-	private async doLoadData(current: number, pageSize: number, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
-		if (this.current !== current) {
-			this.setCurrent(current);
+	private async doLoadData(page: number, pageSize: number, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
+		if (this.page !== page) {
+			this.setPage(page);
 		}
 		if (this.pageSize !== pageSize) {
 			this.setPageSize(pageSize);
 		}
-		// @ts-ignore
-		this.mergeParams({current, page: current, pageSize});
-
 
 		const myConfig = {
 			showMessage: true,
@@ -148,20 +143,28 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			...(config || {}),
 		};
 
+		if (myConfig.postParams) {
+			this.config = {...this.config, postParams: myConfig.postParams, method: myConfig.method};
+		}
+
 		if (this.config?.defaultIndex !== undefined && this.index < 0) {
 			this.setIndex(this.config?.defaultIndex);
 		}
 
+		let myParams = myConfig.postParams ? myConfig.postParams(this.params as P) : this.params;
+
+		myParams = {...myParams, ...(ConfigService.config.handlePage ? ConfigService.config.handlePage(this.page, this.pageSize) : {})};
+
 		const res = await this.doFetch<T[]>(() => {
 			if (typeof this.prepare === 'function') {
-				return this.prepare(this.params as P);
+				return this.prepare(myParams as P);
 			} else {
-				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), this.params as P, {needAuth: myConfig?.needAuth});
+				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), myParams as P, {needAuth: myConfig?.needAuth});
 			}
 		}, myConfig);
 		const {success, data, total} = res;
 		if (success) {
-			if (total! > pageSize * this.current) {
+			if (total! > pageSize * this.page) {
 				this.setHasMore(true);
 			} else {
 				this.setHasMore(false);
@@ -192,19 +195,22 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 
 	// 加载更多
 	async loadMore() {
-		this.setCurrent(this.current + 1);
-		// @ts-ignore
-		this.mergeParams({page: this.current});
+		this.setPage(this.page + 1);
+
+		let myParams = this.config?.postParams ? this.config?.postParams(this.params as P) : this.params;
+
+		myParams = {...myParams, ...(ConfigService.config.handlePage ? ConfigService.config.handlePage(this.page, this.pageSize) : {})};
+
 		const res = await this.doFetch<T[]>(() => {
 			if (typeof this.prepare === 'function') {
-				return this.prepare(this.params as P);
+				return this.prepare(myParams as P);
 			} else {
-				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), this.params as P);
+				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), myParams as P);
 			}
 		}, {showMessage: false, status: false});
 		const {success, data: _data, total} = res;
 		if (success) {
-			if (total! > this.pageSize * this.current) {
+			if (total! > this.pageSize * this.page) {
 				this.setHasMore(true);
 			} else {
 				this.setHasMore(false);
@@ -227,7 +233,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			}
 			this.onLoadComplete(data || []);
 		} else {
-			this.current--;
+			this.page--;
 			if (this.config?.failCallback) {
 				this.config?.failCallback(res);
 			}
@@ -243,7 +249,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 
 	clear() {
 		this.setHasMore(false);
-		this.setCurrent(1);
+		this.setPage(1);
 		this.setPageSize(this.config?.pageSize ?? 10);
 		this.setTotal(0);
 		super.clear();

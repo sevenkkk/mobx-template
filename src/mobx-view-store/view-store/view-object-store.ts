@@ -8,14 +8,15 @@ type getDefaultParams<T> = () => T;
 
 export interface ObjStoreConfig<T, P> extends ObjConfig<T, P> {
 	isDefaultSet?: boolean,
-	defaultParams?: Partial<P> | getDefaultParams<Partial<P>>,
+	defaultParams?: P | Partial<P> | getDefaultParams<Partial<P> | P>,
 	postData?: (data: any) => T,
-	autoLoad?: boolean | getDefaultParams<Partial<P>>,
+	postParams?: (params: P) => any,
+	autoLoad?: boolean | getDefaultParams<Partial<P> | P>,
 	autoClear?: boolean,
 }
 
 export interface ObjConfig<T, P> extends FetchConfig<T> {
-	defaultParams?: Partial<P> | getDefaultParams<Partial<P>>,
+	defaultParams?: P | Partial<P> | getDefaultParams<Partial<P> | P>,
 	autoClear?: boolean,
 }
 
@@ -36,6 +37,7 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 		const {defaultParams} = this.config || {};
 		if (defaultParams) {
 			if (typeof defaultParams === 'function') {
+				// @ts-ignore
 				this.setDefaultParams(defaultParams());
 			} else {
 				this.setDefaultParams(defaultParams);
@@ -86,7 +88,7 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 	 * Set defaultParams
 	 * @param params
 	 */
-	setDefaultParams(params: Partial<P>) {
+	setDefaultParams(params: P | Partial<P>) {
 		// @ts-ignore
 		this.defaultParams = params;
 	}
@@ -101,6 +103,7 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 		}
 		if (defaultParams) {
 			if (typeof defaultParams === 'function') {
+				// @ts-ignore
 				this.setDefaultParams(defaultParams());
 			} else {
 				this.setDefaultParams(defaultParams);
@@ -124,11 +127,14 @@ export class ViewObjStore<T, P = Record<string, any>> extends BaseViewStore {
 			...(config || {}),
 			...(this.config || {}),
 		};
+
+		const myParams = myConfig.postParams ? myConfig.postParams(this.params as P) : this.params;
+
 		const res = await this.doFetch<T>(() => {
 			if (typeof this.prepare === 'function') {
-				return this.prepare(this.params as P);
+				return this.prepare(myParams as P);
 			} else {
-				return getRequest(this.config?.method ?? (this.params ? 'POST' : 'GET'), (this.prepare as string), (this.params ?? (this.config?.method === 'POST' || this.config?.method === 'post' ? {} : undefined)) as P, {needAuth: myConfig?.needAuth});
+				return getRequest(this.config?.method ?? (myParams ? 'POST' : 'GET'), (this.prepare as string), (myParams ?? (this.config?.method === 'POST' || this.config?.method === 'post' ? {} : undefined)) as P, {needAuth: myConfig?.needAuth});
 			}
 		}, myConfig);
 		const {success, data} = res;

@@ -13,13 +13,15 @@ export class ViewBaseBodyStore<P> extends BaseViewStore {
 		});
 	}
 
-	body: P | undefined | Partial<P> = undefined;
+	body: P | undefined = undefined;
 
-	setBody(value: Partial<P>) {
+	setBody(value: P | Partial<P>) {
+		// @ts-ignore
 		this.body = value;
 	}
 
 	mergeBody(value: Partial<P>) {
+		// @ts-ignore
 		this.body = {...this.body || {}, ...value};
 	}
 

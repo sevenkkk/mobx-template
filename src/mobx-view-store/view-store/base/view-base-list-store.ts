@@ -29,9 +29,9 @@ export default class ViewBaseListStore<T, P> extends BaseViewStore {
 	// 可能被处理过的数据，如果没有处理跟rawList值一样
 	list: T[] = [];
 
-	params: P | Partial<P> | undefined = undefined;
+	params: P | undefined = undefined;
 
-	defaultParams: P | Partial<P> | undefined = undefined;
+	defaultParams: P | undefined = undefined;
 
 	index: number = -1;
 
@@ -63,6 +63,7 @@ export default class ViewBaseListStore<T, P> extends BaseViewStore {
 	 * @param params
 	 */
 	mergeParams(params: Partial<P>) {
+		// @ts-ignore
 		this.params = {...(this.params || {}), ...params};
 	}
 
@@ -71,6 +72,7 @@ export default class ViewBaseListStore<T, P> extends BaseViewStore {
 	 * @param params
 	 */
 	setParams(params: Partial<P>) {
+		// @ts-ignore
 		this.params = params;
 	}
 
@@ -78,7 +80,8 @@ export default class ViewBaseListStore<T, P> extends BaseViewStore {
 	 * Set defaultParams
 	 * @param params
 	 */
-	setDefaultParams(params: Partial<P>) {
+	setDefaultParams(params: P | Partial<P>) {
+		// @ts-ignore
 		this.defaultParams = params;
 	}
 
