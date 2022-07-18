@@ -135,7 +135,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			this.setPageSize(pageSize);
 		}
 
-		const myConfig = {
+		this.config = {
 			showMessage: true,
 			showSuccessMessage: false,
 			showErrorMessage: true,
@@ -143,15 +143,11 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			...(config || {}),
 		};
 
-		if (myConfig.postParams) {
-			this.config = {...this.config, postParams: myConfig.postParams, method: myConfig.method};
-		}
-
 		if (this.config?.defaultIndex !== undefined && this.index < 0) {
 			this.setIndex(this.config?.defaultIndex);
 		}
 
-		let myParams = myConfig.postParams ? myConfig.postParams(this.params as P) : this.params;
+		let myParams = this.config.postParams ? this.config.postParams(this.params as P) : this.params;
 
 		myParams = {...myParams, ...(ConfigService.config.handlePage ? ConfigService.config.handlePage(this.page, this.pageSize) : {})};
 
@@ -159,9 +155,9 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			if (typeof this.prepare === 'function') {
 				return this.prepare(myParams as P);
 			} else {
-				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), myParams as P, {needAuth: myConfig?.needAuth});
+				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), myParams as P, this.config);
 			}
-		}, myConfig);
+		}, this.config);
 		const {success, data, total} = res;
 		if (success) {
 			if (total! > pageSize * this.page) {
@@ -180,13 +176,13 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 				this.setList(_list);
 				this.setTotal(total || 0);
 			}
-			if (myConfig?.successCallback) {
-				myConfig?.successCallback(_list, total || 0);
+			if (this.config?.successCallback) {
+				this.config?.successCallback(_list, total || 0);
 			}
 			this.onLoadComplete(_list);
 		} else {
-			if (myConfig?.failCallback) {
-				myConfig?.failCallback(res);
+			if (this.config?.failCallback) {
+				this.config?.failCallback(res);
 			}
 		}
 		return {...res, data: this.list};
@@ -205,7 +201,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			if (typeof this.prepare === 'function') {
 				return this.prepare(myParams as P);
 			} else {
-				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), myParams as P);
+				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), myParams as P,this.config);
 			}
 		}, {showMessage: false, status: false});
 		const {success, data: _data, total} = res;
