@@ -1,6 +1,6 @@
 {
   "name": "mobx-template",
-  "version": "6.4.20",
+  "version": "6.4.22",
   "private": false,
   "description": "",
   "source": "src/index.js",

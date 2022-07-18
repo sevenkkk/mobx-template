@@ -35,7 +35,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			this.setParams(this.defaultParams!);
 		}
 
-		if (pageSize) {
+		if (pageSize !== undefined) {
 			this.setPageSize(pageSize);
 		}
 
@@ -119,12 +119,12 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			this.mergeParams(this.defaultParams);
 		}
 		this.setHasMore(false);
-		return this.doLoadData(page || 1, pageSize || this.pageSize, config);
+		return this.doLoadData(page || 1, pageSize !== undefined ? pageSize : this.pageSize, config);
 	}
 
 	loadDataPage(config: PageConfig<T[], P>): Promise<UseResult<T[]>> {
 		const {page, pageSize} = config;
-		return this.doLoadData(page || this.page, pageSize || this.pageSize, config);
+		return this.doLoadData(page || this.page, pageSize !== undefined ? pageSize : this.pageSize, config);
 	}
 
 	private async doLoadData(page: number, pageSize: number, config?: FetchConfig<T[]>): Promise<UseResult<T[]>> {
@@ -201,7 +201,7 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 			if (typeof this.prepare === 'function') {
 				return this.prepare(myParams as P);
 			} else {
-				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), myParams as P,this.config);
+				return getRequest(this.config?.method ?? 'POST', (this.prepare as string), myParams as P, this.config);
 			}
 		}, {showMessage: false, status: false});
 		const {success, data: _data, total} = res;
@@ -246,7 +246,6 @@ export class ViewPageListStore<T, P = Record<string, any>> extends ViewBaseListS
 	clear() {
 		this.setHasMore(false);
 		this.setPage(1);
-		this.setPageSize(this.config?.pageSize ?? 10);
 		this.setTotal(0);
 		super.clear();
 	}
